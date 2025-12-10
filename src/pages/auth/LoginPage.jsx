@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -13,7 +13,6 @@ import {
   Typography,
   Paper,
   Divider,
-  alpha,
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -26,6 +25,8 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
@@ -35,6 +36,26 @@ export const LoginPage = () => {
       rememberMe: false,
     },
   });
+
+  // Parallax efekti için mouse hareketini dinle
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 100;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 100;
+        setMousePosition({ x, y });
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+      return () => {
+        container.removeEventListener('mousemove', handleMouseMove);
+      };
+    }
+  }, []);
 
   const onSubmit = async (values) => {
     try {
@@ -54,37 +75,73 @@ export const LoginPage = () => {
 
   return (
     <Box
+      ref={containerRef}
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #065f46 0%, #1e3a8a 50%, #312e81 100%)',
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         py: 4,
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+      }}
+    >
+      {/* Parallax arka plan - Logo resmi */}
+      <Box
+        sx={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%)',
+          backgroundImage: 'url(/university-logo.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.15,
+          transform: `translate(${-mousePosition.x * 0.3}px, ${-mousePosition.y * 0.3}px)`,
+          transition: 'transform 0.1s ease-out',
+          zIndex: 0,
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(135deg, rgba(240, 249, 255, 0.9) 0%, rgba(224, 242, 254, 0.85) 50%, rgba(240, 249, 255, 0.9) 100%)',
+          },
+        }}
+      />
+      
+      {/* Gradient overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%)',
           pointerEvents: 'none',
-        },
-      }}
-    >
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+          zIndex: 1,
+        }}
+      />
+      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 2 }}>
         <Paper
-          elevation={24}
+          elevation={0}
           sx={{
-            borderRadius: 4,
+            borderRadius: 6,
             p: { xs: 3, sm: 5 },
-            background: 'rgba(17, 24, 39, 0.95)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(75, 85, 99, 0.3)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(40px)',
+            border: '1px solid rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              boxShadow: '0 12px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08)',
+            },
           }}
         >
           <Stack spacing={4}>
@@ -94,12 +151,13 @@ export const LoginPage = () => {
                 variant="h3"
                 fontWeight={800}
                 sx={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%)',
+                  background: 'linear-gradient(135deg, #1e40af 0%, #059669 50%, #1e40af 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   mb: 1,
                   letterSpacing: '-0.02em',
+                  fontSize: { xs: '2rem', sm: '2.5rem' },
                 }}
               >
                 Hoş Geldiniz
@@ -109,7 +167,7 @@ export const LoginPage = () => {
                 sx={{ 
                   fontSize: '1.1rem', 
                   fontWeight: 500,
-                  color: 'rgba(209, 213, 219, 0.8)',
+                  color: 'rgba(30, 58, 138, 0.8)',
                 }}
               >
                 {appConfig.appName} hesabınıza giriş yapın
@@ -131,37 +189,40 @@ export const LoginPage = () => {
                     helperText={errors.email?.message}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        backgroundColor: alpha('#1f2937', 0.8),
-                        color: '#f3f4f6',
+                        borderRadius: 3,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        color: '#1e293b',
                         transition: 'all 0.3s ease',
                         '& fieldset': {
-                          borderColor: 'rgba(75, 85, 99, 0.5)',
+                          borderColor: 'rgba(30, 58, 138, 0.2)',
+                          borderWidth: 2,
                         },
                         '&:hover': {
-                          backgroundColor: '#1f2937',
+                          backgroundColor: 'rgba(255, 255, 255, 1)',
                           transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.1)',
                           '& fieldset': {
-                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: 'rgba(30, 58, 138, 0.4)',
                           },
                         },
                         '&.Mui-focused': {
-                          backgroundColor: '#1f2937',
-                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                          backgroundColor: 'rgba(255, 255, 255, 1)',
+                          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.2)',
                           '& fieldset': {
-                            borderColor: '#3b82f6',
+                            borderColor: '#1e40af',
+                            borderWidth: 2,
                           },
                         },
                       },
                       '& .MuiInputLabel-root': {
-                        color: 'rgba(209, 213, 219, 0.7)',
+                        color: 'rgba(30, 58, 138, 0.7)',
+                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#3b82f6',
+                        color: '#1e40af',
                       },
                       '& .MuiFormHelperText-root': {
-                        color: 'rgba(209, 213, 219, 0.6)',
+                        color: 'rgba(30, 58, 138, 0.6)',
                       },
                     }}
                   />
@@ -181,37 +242,40 @@ export const LoginPage = () => {
                     helperText={errors.password?.message}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                        backgroundColor: alpha('#1f2937', 0.8),
-                        color: '#f3f4f6',
+                        borderRadius: 3,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        color: '#1e293b',
                         transition: 'all 0.3s ease',
                         '& fieldset': {
-                          borderColor: 'rgba(75, 85, 99, 0.5)',
+                          borderColor: 'rgba(30, 58, 138, 0.2)',
+                          borderWidth: 2,
                         },
                         '&:hover': {
-                          backgroundColor: '#1f2937',
+                          backgroundColor: 'rgba(255, 255, 255, 1)',
                           transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.1)',
                           '& fieldset': {
-                            borderColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: 'rgba(30, 58, 138, 0.4)',
                           },
                         },
                         '&.Mui-focused': {
-                          backgroundColor: '#1f2937',
-                          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                          backgroundColor: 'rgba(255, 255, 255, 1)',
+                          boxShadow: '0 4px 12px rgba(30, 58, 138, 0.2)',
                           '& fieldset': {
-                            borderColor: '#3b82f6',
+                            borderColor: '#1e40af',
+                            borderWidth: 2,
                           },
                         },
                       },
                       '& .MuiInputLabel-root': {
-                        color: 'rgba(209, 213, 219, 0.7)',
+                        color: 'rgba(30, 58, 138, 0.7)',
+                        fontWeight: 500,
                       },
                       '& .MuiInputLabel-root.Mui-focused': {
-                        color: '#3b82f6',
+                        color: '#1e40af',
                       },
                       '& .MuiFormHelperText-root': {
-                        color: 'rgba(209, 213, 219, 0.6)',
+                        color: 'rgba(30, 58, 138, 0.6)',
                       },
                     }}
                   />
@@ -237,9 +301,9 @@ export const LoginPage = () => {
                           {...field}
                           checked={field.value}
                           sx={{
-                            color: '#3b82f6',
+                            color: '#1e40af',
                             '&.Mui-checked': {
-                              color: '#6366f1',
+                              color: '#059669',
                             },
                           }}
                         />
@@ -249,7 +313,7 @@ export const LoginPage = () => {
                           variant="body2" 
                           sx={{ 
                             fontWeight: 500,
-                            color: 'rgba(209, 213, 219, 0.9)',
+                            color: 'rgba(30, 58, 138, 0.9)',
                           }}
                         >
                           Beni hatırla
@@ -263,12 +327,12 @@ export const LoginPage = () => {
                   to="/forgot-password"
                   underline="hover"
                   sx={{
-                    color: '#60a5fa',
+                    color: '#1e40af',
                     fontWeight: 600,
                     fontSize: '0.875rem',
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                      color: '#818cf8',
+                      color: '#059669',
                       transform: 'translateX(2px)',
                     },
                   }}
@@ -284,24 +348,25 @@ export const LoginPage = () => {
                 fullWidth
                 disabled={isSubmitting}
                 sx={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%)',
-                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #1e40af 0%, #059669 50%, #1e40af 100%)',
+                  borderRadius: 3,
                   py: 1.5,
                   fontSize: '1rem',
                   fontWeight: 700,
                   textTransform: 'none',
-                  boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                  color: 'white',
+                  boxShadow: '0 4px 14px rgba(30, 58, 138, 0.3)',
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #059669 0%, #2563eb 50%, #4f46e5 100%)',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #047857 50%, #1e3a8a 100%)',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.6)',
+                    boxShadow: '0 6px 20px rgba(30, 58, 138, 0.4)',
                   },
                   '&:active': {
                     transform: 'translateY(0)',
                   },
                   '&:disabled': {
-                    background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 50%, #6366f1 100%)',
+                    background: 'linear-gradient(135deg, #1e40af 0%, #059669 50%, #1e40af 100%)',
                     opacity: 0.7,
                   },
                 }}
@@ -310,12 +375,12 @@ export const LoginPage = () => {
               </Button>
             </Stack>
 
-            <Divider sx={{ my: 1, borderColor: 'rgba(75, 85, 99, 0.3)' }}>
+            <Divider sx={{ my: 1, borderColor: 'rgba(30, 58, 138, 0.2)' }}>
               <Typography 
                 variant="body2" 
                 sx={{ 
                   px: 2,
-                  color: 'rgba(209, 213, 219, 0.6)',
+                  color: 'rgba(30, 58, 138, 0.6)',
                 }}
               >
                 veya
@@ -326,7 +391,7 @@ export const LoginPage = () => {
               textAlign="center" 
               sx={{ 
                 fontSize: '0.95rem',
-                color: 'rgba(209, 213, 219, 0.8)',
+                color: 'rgba(30, 58, 138, 0.8)',
               }}
             >
               Hesabınız yok mu?{' '}
@@ -335,11 +400,11 @@ export const LoginPage = () => {
                 to="/register"
                 underline="hover"
                 sx={{
-                  color: '#60a5fa',
+                  color: '#1e40af',
                   fontWeight: 700,
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    color: '#818cf8',
+                    color: '#059669',
                     transform: 'translateX(2px)',
                   },
                 }}
