@@ -25,14 +25,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/useToast';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { appConfig } from '@/config/appConfig';
-
-const departmentOptions = [
-  { value: 'computer-engineering', label: 'Bilgisayar Mühendisliği' },
-  { value: 'electrical-engineering', label: 'Elektrik-Elektronik Müh.' },
-  { value: 'industrial-engineering', label: 'Endüstri Müh.' },
-  { value: 'business', label: 'İşletme' },
-  { value: 'economics', label: 'İktisat' },
-];
+import { departmentOptions } from '@/constants/departments';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();

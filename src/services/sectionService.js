@@ -8,4 +8,16 @@ export const sectionService = {
         const { data } = await apiClient.get(`/sections/${sectionId}`);
         return data;
     },
+    mySections: async () => {
+        const { data } = await apiClient.get('/sections/my-sections');
+        return data;
+    },
+    create: async (payload) => {
+        const { data } = await apiClient.post('/sections', payload);
+        return data;
+    },
+    update: async (sectionId, payload) => {
+        const { data } = await apiClient.put(`/sections/${sectionId}`, payload);
+        return data;
+    },
 };

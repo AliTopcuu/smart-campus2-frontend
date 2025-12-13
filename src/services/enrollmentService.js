@@ -16,4 +16,16 @@ export const enrollmentService = {
         const { data } = await apiClient.get(`/enrollments/students/${sectionId}`);
         return data;
     },
+    getPendingEnrollments: async (sectionId) => {
+        const { data } = await apiClient.get(`/enrollments/pending/${sectionId}`);
+        return data;
+    },
+    approveEnrollment: async (enrollmentId) => {
+        const { data } = await apiClient.patch(`/enrollments/${enrollmentId}/approve`);
+        return data;
+    },
+    rejectEnrollment: async (enrollmentId) => {
+        const { data } = await apiClient.patch(`/enrollments/${enrollmentId}/reject`);
+        return data;
+    },
 };

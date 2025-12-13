@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Box,
   Button,
+  Card,
+  CardContent,
   Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
+  IconButton,
   Stack,
   Table,
   TableBody,
@@ -20,41 +21,37 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import PeopleIcon from '@mui/icons-material/PeopleRounded';
 import CheckCircleIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelIcon from '@mui/icons-material/CancelRounded';
-import WarningIcon from '@mui/icons-material/WarningAmberRounded';
-import DescriptionIcon from '@mui/icons-material/Description';
-import { courseService } from '@/services/courseService';
+import { sectionService } from '@/services/sectionService';
 import { enrollmentService } from '@/services/enrollmentService';
-import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/useToast';
 
-export const CourseDetailPage = () => {
-  const { id } = useParams();
-  const { user } = useAuth();
+export const MySectionsPage = () => {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [selectedSection, setSelectedSection] = useState(null);
   const [studentsDialogOpen, setStudentsDialogOpen] = useState(false);
-  const isFaculty = user?.role === 'faculty';
+  const [selectedSection, setSelectedSection] = useState(null);
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['course', id],
-    queryFn: () => (id ? courseService.getById(id) : Promise.reject()),
-    enabled: Boolean(id),
+  const { data: sections, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['my-sections'],
+    queryFn: () => sectionService.mySections(),
+    staleTime: 0,
+    cacheTime: 0,
   });
 
-  // Get pending enrollments for faculty
+  // Get pending enrollments and students for selected section
   const { data: pendingEnrollments = [], refetch: refetchPending } = useQuery({
     queryKey: ['pending-enrollments', selectedSection?.id],
     queryFn: () => enrollmentService.getPendingEnrollments(selectedSection.id),
-    enabled: Boolean(selectedSection?.id) && studentsDialogOpen && isFaculty,
+    enabled: Boolean(selectedSection?.id) && studentsDialogOpen,
   });
 
   const { data: enrolledStudents = [], refetch: refetchEnrolled } = useQuery({
     queryKey: ['section-students', selectedSection?.id],
     queryFn: () => enrollmentService.sectionStudents(selectedSection.id),
-    enabled: Boolean(selectedSection?.id) && studentsDialogOpen && isFaculty,
+    enabled: Boolean(selectedSection?.id) && studentsDialogOpen,
   });
 
   const approveMutation = useMutation({
@@ -69,7 +66,6 @@ export const CourseDetailPage = () => {
         queryClient.invalidateQueries({ queryKey: ['pending-enrollments', sectionId] }),
         queryClient.invalidateQueries({ queryKey: ['section-students', sectionId] }),
         queryClient.invalidateQueries({ queryKey: ['section-students'] }),
-        queryClient.invalidateQueries({ queryKey: ['course', id] }),
       ];
       
       await Promise.all(invalidatePromises);
@@ -81,8 +77,6 @@ export const CourseDetailPage = () => {
           refetchEnrolled().catch(err => console.error('Error refetching enrolled:', err)),
         ]);
       }
-      
-      await refetch().catch(err => console.error('Error refetching course:', err));
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || error?.message || 'Onaylama sırasında hata oluştu');
@@ -111,280 +105,157 @@ export const CourseDetailPage = () => {
     setSelectedSection(null);
   };
 
-  const enrollMutation = useMutation({
-    mutationFn: (sectionId) => {
-      // Ensure sectionId is a number
-      const numSectionId = typeof sectionId === 'string' ? parseInt(sectionId, 10) : Number(sectionId);
-      if (isNaN(numSectionId) || numSectionId <= 0) {
-        throw new Error('Geçersiz section ID');
-      }
-      console.log('Enrolling with sectionId:', numSectionId, 'type:', typeof numSectionId);
-      return enrollmentService.enroll({ sectionId: numSectionId });
-    },
-    onSuccess: (res) => {
-      toast.success(res.message ?? 'Kayıt isteği gönderildi. Eğitmen onayını bekliyor.');
-      queryClient.invalidateQueries({ queryKey: ['course', id] });
-      queryClient.invalidateQueries({ queryKey: ['my-courses'] });
-      setSelectedSection(null);
-    },
-    onError: (error) => {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Kayıt sırasında hata oluştu';
-      toast.error(errorMessage);
-    },
-  });
-
-  const handleEnrollClick = (section) => {
-    setSelectedSection(section);
-  };
-
-  const handleConfirmEnroll = () => {
-    if (!selectedSection || !selectedSection.id) {
-      toast.error('Geçersiz section bilgisi');
-      return;
-    }
-    enrollMutation.mutate(selectedSection.id);
-  };
-
-  const renderPrerequisites = (course) => {
-    if (!course.prerequisites?.length) {
-      return <Typography color="text.secondary">Ön koşul bulunmuyor.</Typography>;
-    }
-    return (
-      <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
-        {course.prerequisites.map((prereq) => (
-          <Chip
-            key={prereq.id || prereq.courseId}
-            label={`${prereq.code || prereq.courseCode} - ${prereq.name || prereq.courseName}`}
-            size="small"
-            component={Link}
-            to={`/courses/${prereq.id || prereq.courseId || prereq.prerequisiteCourseId}`}
-            clickable
-            sx={{ cursor: 'pointer' }}
-          />
-        ))}
-      </Stack>
-    );
-  };
-
-  const renderSections = (course) => {
-    if (!course.sections?.length) {
-      return <Typography color="text.secondary">Bu ders için section bulunmuyor.</Typography>;
-    }
-
-    const isStudent = user?.role === 'student';
-    
-    // For faculty, filter to show only their sections
-    const sectionsToShow = isFaculty 
-      ? course.sections.filter(section => section.instructorId === user.id)
-      : course.sections;
-
-    if (isFaculty && sectionsToShow.length === 0) {
-      return <Typography color="text.secondary">Bu derste size atanmış section bulunmuyor.</Typography>;
-    }
-
-    return (
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Section</TableCell>
-            {!isFaculty && <TableCell>Eğitmen</TableCell>}
-            <TableCell>Ders Programı</TableCell>
-            <TableCell>Ders Yeri</TableCell>
-            <TableCell align="center">Kapasite</TableCell>
-            <TableCell align="right">İşlem</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {sectionsToShow.map((section) => {
-            const available = section.enrolledCount < section.capacity;
-            // Handle instructor - it might be an object or a string
-            const instructorName = typeof section.instructor === 'object'
-              ? section.instructor?.fullName || section.instructor?.name || section.instructor?.email || '-'
-              : section.instructor || '-';
-            
-            // Parse scheduleJson - handle both new and old format
-            let schedule = section.scheduleJson;
-            if (typeof schedule === 'string') {
-              try {
-                schedule = JSON.parse(schedule);
-              } catch (e) {
-                schedule = null;
-              }
-            }
-            schedule = schedule || {};
-            
-            const dayLabels = {
-              Monday: 'Pazartesi',
-              Tuesday: 'Salı',
-              Wednesday: 'Çarşamba',
-              Thursday: 'Perşembe',
-              Friday: 'Cuma',
-            };
-            
-            let scheduleText = 'Belirtilmemiş';
-            
-            // New format: scheduleItems array
-            if (Array.isArray(schedule.scheduleItems) && schedule.scheduleItems.length > 0) {
-              const scheduleTexts = schedule.scheduleItems.map(item => {
-                const dayLabel = dayLabels[item.day] || item.day;
-                const timeStr = item.startTime && item.endTime 
-                  ? ` (${item.startTime}-${item.endTime})` 
-                  : '';
-                return `${dayLabel}${timeStr}`;
-              });
-              scheduleText = scheduleTexts.join(', ');
-            } 
-            // Old format: days array + single startTime/endTime
-            else if (Array.isArray(schedule.days) && schedule.days.length > 0) {
-              scheduleText = schedule.days.map(day => dayLabels[day] || day).join(', ');
-              if (schedule.startTime && schedule.endTime) {
-                scheduleText += ` (${schedule.startTime}-${schedule.endTime})`;
-              }
-            }
-            // Fallback to scheduleText if exists
-            else if (section.scheduleText && section.scheduleText !== 'TBA' && section.scheduleText !== '-') {
-              scheduleText = section.scheduleText;
-            }
-            
-            const classroom = schedule.classroom || 'Belirtilmemiş';
-            
-            return (
-              <TableRow key={section.id}>
-                <TableCell>{section.sectionNumber}</TableCell>
-                {!isFaculty && <TableCell>{instructorName}</TableCell>}
-                <TableCell>
-                  <Typography variant="body2">{scheduleText}</Typography>
-                </TableCell>
-                <TableCell>{classroom}</TableCell>
-                <TableCell align="center">
-                  {section.enrolledCount}/{section.capacity}{' '}
-                  {available ? (
-                    <CheckCircleIcon fontSize="small" color="success" />
-                  ) : (
-                    <WarningIcon fontSize="small" color="warning" />
-                  )}
-                </TableCell>
-                <TableCell align="right">
-                  {isStudent ? (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleEnrollClick(section)}
-                      disabled={!available}
-                    >
-                      {available ? 'Kayıt İsteği Gönder' : 'Dolu'}
-                    </Button>
-                  ) : isFaculty ? (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleOpenStudentsDialog(section)}
-                    >
-                      Öğrencileri Görüntüle
-                    </Button>
-                  ) : null}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    );
-  };
-
   if (isLoading) {
     return (
       <Stack alignItems="center" py={6}>
         <CircularProgress />
-        <Typography mt={2}>Ders bilgileri yükleniyor...</Typography>
+        <Typography mt={2}>Sectionlarınız yükleniyor...</Typography>
       </Stack>
     );
   }
 
-  if (isError || !data) {
+  if (isError) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Sectionlarınız listesi alınamadı.';
     return (
       <Alert
         severity="error"
         action={<Button onClick={() => refetch()}>Tekrar dene</Button>}
       >
-        Ders bilgisi alınamadı.
+        {errorMessage}
       </Alert>
     );
   }
 
+  const sectionsList = Array.isArray(sections) ? sections : [];
+
   return (
     <Box>
-      <Typography variant="h4" mb={2}>
-        {data.code} - {data.name}
-      </Typography>
-      <Typography color="text.secondary" mb={3}>
-        {typeof data.department === 'object' 
-          ? data.department?.name || data.department?.code || data.departmentId
-          : data.department || data.departmentId || '-'} • {data.credits} Kredi • {data.ects} ECTS
+      <Typography variant="h4" mb={3}>
+        Derslerim
       </Typography>
 
-      {data.description && (
-        <Typography mb={2} color="text.secondary">
-          {data.description}
-        </Typography>
+      {sectionsList.length === 0 ? (
+        <Alert severity="info">Henüz size atanmış section bulunmuyor.</Alert>
+      ) : (
+        <Card>
+          <CardContent>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Ders</TableCell>
+                  <TableCell>Section</TableCell>
+                  <TableCell>Dönem</TableCell>
+                  <TableCell>Yıl</TableCell>
+                  <TableCell>Ders Programı</TableCell>
+                  <TableCell>Ders Yeri</TableCell>
+                  <TableCell>Kapasite</TableCell>
+                  <TableCell>Kayıtlı</TableCell>
+                  <TableCell align="right">İşlem</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sectionsList.map((section) => {
+                  // Parse schedule information - handle string from Sequelize JSONB
+                  let schedule = section.scheduleJson;
+                  
+                  // Debug log
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('MySectionsPage - Section schedule data:', {
+                      sectionId: section.id,
+                      scheduleJson: schedule,
+                      scheduleType: typeof schedule,
+                      section: section
+                    });
+                  }
+                  
+                  if (typeof schedule === 'string') {
+                    try {
+                      schedule = JSON.parse(schedule);
+                    } catch (e) {
+                      schedule = null;
+                    }
+                  }
+                  schedule = schedule || {};
+                  
+                  const dayLabels = {
+                    Monday: 'Pazartesi',
+                    Tuesday: 'Salı',
+                    Wednesday: 'Çarşamba',
+                    Thursday: 'Perşembe',
+                    Friday: 'Cuma',
+                  };
+                  
+                  let scheduleText = 'Belirtilmemiş';
+                  
+                  // New format: scheduleItems array
+                  if (Array.isArray(schedule.scheduleItems) && schedule.scheduleItems.length > 0) {
+                    const scheduleTexts = schedule.scheduleItems.map(item => {
+                      const dayLabel = dayLabels[item.day] || item.day;
+                      const timeStr = item.startTime && item.endTime 
+                        ? ` (${item.startTime}-${item.endTime})` 
+                        : '';
+                      return `${dayLabel}${timeStr}`;
+                    });
+                    scheduleText = scheduleTexts.join(', ');
+                  } 
+                  // Old format: days array + single startTime/endTime
+                  else if (Array.isArray(schedule.days) && schedule.days.length > 0) {
+                    scheduleText = schedule.days.map(day => dayLabels[day] || day).join(', ');
+                    if (schedule.startTime && schedule.endTime) {
+                      scheduleText += ` (${schedule.startTime}-${schedule.endTime})`;
+                    }
+                  }
+                  
+                  const classroom = schedule.classroom || 'Belirtilmemiş';
+                  
+                  return (
+                    <TableRow key={section.id}>
+                      <TableCell>
+                        <Typography fontWeight={600}>
+                          {section.course?.code || section.courseCode || 'N/A'}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {section.course?.name || section.courseName || ''}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{section.sectionNumber}</TableCell>
+                      <TableCell>{section.semester}</TableCell>
+                      <TableCell>{section.year}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{scheduleText}</Typography>
+                      </TableCell>
+                      <TableCell>{classroom}</TableCell>
+                      <TableCell>{section.capacity}</TableCell>
+                      <TableCell>
+                        {section.enrolledCount || 0}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenStudentsDialog(section)}
+                          color="primary"
+                          title="Öğrencileri Görüntüle"
+                        >
+                          <PeopleIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
-      {data.syllabusUrl && (
-        <Box mb={4}>
-          <Button
-            variant="outlined"
-            startIcon={<DescriptionIcon />}
-            href={data.syllabusUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Ders Programını Görüntüle
-          </Button>
-        </Box>
-      )}
-
-      <Box mb={4}>
-        <Typography variant="h6">Ön Koşullar</Typography>
-        {renderPrerequisites(data)}
-      </Box>
-
-      <Box>
-        <Typography variant="h6" mb={2}>
-          Sectionlar
-        </Typography>
-        {renderSections(data)}
-      </Box>
-
-      {/* Student Enrollment Dialog */}
-      <Dialog open={Boolean(selectedSection) && user?.role === 'student'} onClose={() => setSelectedSection(null)}>
-        <DialogTitle>Derse Kayıt İsteği Gönder</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {selectedSection
-              ? `${selectedSection.sectionNumber} numaralı section için kayıt isteği göndereceksiniz. İstek eğitmen onayından sonra aktif olacaktır. Onaylıyor musunuz?`
-              : 'Section seçilmedi.'}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedSection(null)}>İptal</Button>
-          <Button
-            variant="contained"
-            onClick={handleConfirmEnroll}
-            disabled={enrollMutation.isPending}
-          >
-            {enrollMutation.isPending ? 'Gönderiliyor...' : 'İstek Gönder'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Faculty Students Dialog */}
-      <Dialog open={studentsDialogOpen && isFaculty} onClose={handleCloseStudentsDialog} maxWidth="md" fullWidth>
+      {/* Students and Pending Enrollments Dialog */}
+      <Dialog open={studentsDialogOpen} onClose={handleCloseStudentsDialog} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedSection && (
             <>
-              Section {selectedSection.sectionNumber}
+              {selectedSection.course?.code || selectedSection.courseCode} - Section {selectedSection.sectionNumber}
               <Typography variant="body2" color="text.secondary" mt={1}>
-                {data?.code} - {data?.name}
+                {selectedSection.course?.name || selectedSection.courseName}
               </Typography>
               {selectedSection.scheduleJson && (
                 <Box mt={2}>
@@ -551,4 +422,3 @@ export const CourseDetailPage = () => {
     </Box>
   );
 };
-

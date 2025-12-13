@@ -9,6 +9,8 @@ import MapIcon from '@mui/icons-material/MapRounded';
 import FactCheckIcon from '@mui/icons-material/FactCheckRounded';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedInRounded';
 import CheckCircleIcon from '@mui/icons-material/CheckCircleRounded';
+import SettingsIcon from '@mui/icons-material/SettingsRounded';
+import GroupIcon from '@mui/icons-material/GroupRounded';
 export const navItems = [
     {
         label: 'Dashboard',
@@ -72,5 +74,23 @@ export const navItems = [
         path: '/excuse-requests',
         icon: AssignmentTurnedInIcon,
         roles: ['student', 'faculty', 'admin'],
+    },
+    {
+        label: 'Ders Yönetimi',
+        path: '/admin/courses',
+        icon: SettingsIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Section Yönetimi',
+        path: '/admin/sections',
+        icon: GroupIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Bölüm Yönetimi',
+        path: '/admin/departments',
+        icon: SchoolIcon,
+        roles: ['admin'],
     },
 ];

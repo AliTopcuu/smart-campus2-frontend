@@ -28,8 +28,8 @@ export const attendanceService = {
         const { data } = await apiClient.get('/attendance/my-attendance');
         return data;
     },
-    sessionReport: async (sessionId, params) => {
-        const { data } = await apiClient.get(`/attendance/report/${sessionId}`, { params });
+    sessionReport: async (sectionId, params) => {
+        const { data } = await apiClient.get(`/attendance/report/${sectionId}`, { params });
         return data;
     },
 };

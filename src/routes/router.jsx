@@ -2,9 +2,11 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import {
   ActiveSessionsPage,
   AttendanceReportPage,
+  DashboardPage,
   CoursesPage,
   CourseDetailPage,
-  DashboardPage,
+  CourseManagementPage,
+  DepartmentManagementPage,
   ExcuseRequestsPage,
   ForgotPasswordPage,
   GiveAttendancePage,
@@ -13,11 +15,13 @@ import {
   LoginPage,
   MyAttendancePage,
   MyCoursesPage,
+  MySectionsPage,
   NotFoundPage,
   ProfilePage,
   RegisterPage,
   ResetPasswordPage,
   ScanQRCodePage,
+  SectionManagementPage,
   StartAttendancePage,
   VerifyEmailPage,
 } from '@/pages';
@@ -79,11 +83,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/gradebook',
-        element: <ProtectedRoute roles={['faculty', 'admin']}><GradebookPage /></ProtectedRoute>,
+        element: <ProtectedRoute roles={['faculty']}><GradebookPage /></ProtectedRoute>,
       },
       {
         path: '/gradebook/:sectionId',
-        element: <ProtectedRoute roles={['faculty', 'admin']}><GradebookPage /></ProtectedRoute>,
+        element: <ProtectedRoute roles={['faculty']}><GradebookPage /></ProtectedRoute>,
       },
       {
         path: '/attendance/start',
@@ -116,6 +120,18 @@ export const router = createBrowserRouter([
       {
         path: '/excuse-requests',
         element: <ExcuseRequestsPage />,
+      },
+      {
+        path: '/admin/courses',
+        element: <ProtectedRoute roles={['admin']}><CourseManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/sections',
+        element: <ProtectedRoute roles={['admin']}><SectionManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/departments',
+        element: <ProtectedRoute roles={['admin']}><DepartmentManagementPage /></ProtectedRoute>,
       },
     ],
   },

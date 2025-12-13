@@ -1,7 +1,16 @@
 import { apiClient } from '@/services/apiClient';
 export const gradeService = {
-    myGrades: async () => {
-        const { data } = await apiClient.get('/grades/my-grades');
+    myGrades: async (filters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.year !== undefined && filters.year !== null && filters.year !== '') {
+            params.append('year', filters.year);
+        }
+        if (filters.semester !== undefined && filters.semester !== null && filters.semester !== '') {
+            params.append('semester', filters.semester);
+        }
+        const queryString = params.toString();
+        const url = `/grades/my-grades${queryString ? `?${queryString}` : ''}`;
+        const { data } = await apiClient.get(url);
         return data;
     },
     transcript: async () => {
