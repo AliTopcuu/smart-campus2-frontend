@@ -16,3 +16,5 @@ export { GiveAttendancePage } from './attendance/GiveAttendancePage';
 export { MyAttendancePage } from './attendance/MyAttendancePage';
 export { AttendanceReportPage } from './attendance/AttendanceReportPage';
 export { ExcuseRequestsPage } from './attendance/ExcuseRequestsPage';
+export { ActiveSessionsPage } from './attendance/ActiveSessionsPage';
+export { ScanQRCodePage } from './attendance/ScanQRCodePage';

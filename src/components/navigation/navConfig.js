@@ -56,8 +56,8 @@ export const navItems = [
         roles: ['student'],
     },
     {
-        label: 'Yoklamaya Katıl',
-        path: '/attendance/give/test-session-123',
+        label: 'QR Kod ile Katıl',
+        path: '/attendance/scan',
         icon: CheckCircleIcon,
         roles: ['student'],
     },

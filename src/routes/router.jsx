@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import {
+  ActiveSessionsPage,
   AttendanceReportPage,
   CoursesPage,
   CourseDetailPage,
@@ -16,6 +17,7 @@ import {
   ProfilePage,
   RegisterPage,
   ResetPasswordPage,
+  ScanQRCodePage,
   StartAttendancePage,
   VerifyEmailPage,
 } from '@/pages';
@@ -88,7 +90,15 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute roles={['faculty', 'admin']}><StartAttendancePage /></ProtectedRoute>,
       },
       {
-        path: '/attendance/give/:sessionId',
+        path: '/attendance/active',
+        element: <ProtectedRoute roles={['student']}><ActiveSessionsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/attendance/scan',
+        element: <ProtectedRoute roles={['student']}><ScanQRCodePage /></ProtectedRoute>,
+      },
+      {
+        path: '/attendance/checkin/:sessionId',
         element: <ProtectedRoute roles={['student']}><GiveAttendancePage /></ProtectedRoute>,
       },
       {

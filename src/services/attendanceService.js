@@ -12,6 +12,14 @@ export const attendanceService = {
         const { data } = await apiClient.get('/attendance/sessions/my-sessions');
         return data;
     },
+    getActiveSessions: async () => {
+        const { data } = await apiClient.get('/attendance/sessions/active');
+        return data;
+    },
+    getSessionById: async (sessionId) => {
+        const { data } = await apiClient.get(`/attendance/sessions/${sessionId}`);
+        return data;
+    },
     checkIn: async (sessionId, payload) => {
         const { data } = await apiClient.post(`/attendance/sessions/${sessionId}/checkin`, payload);
         return data;
@@ -20,8 +28,8 @@ export const attendanceService = {
         const { data } = await apiClient.get('/attendance/my-attendance');
         return data;
     },
-    sessionReport: async (sectionId, params) => {
-        const { data } = await apiClient.get(`/attendance/report/${sectionId}`, { params });
+    sessionReport: async (sessionId, params) => {
+        const { data } = await apiClient.get(`/attendance/report/${sessionId}`, { params });
         return data;
     },
 };

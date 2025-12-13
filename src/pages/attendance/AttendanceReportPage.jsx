@@ -1,118 +1,230 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
   Card,
   CardContent,
-  MenuItem,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  CircularProgress,
+  Alert,
+  Divider,
 } from '@mui/material';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfRounded';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PersonIcon from '@mui/icons-material/Person';
+import SchoolIcon from '@mui/icons-material/School';
 import { useToast } from '@/hooks/useToast';
-
-const mockStudents = [
-  { id: 'stu-1', name: 'Ayşe Yılmaz', attended: 15, total: 18, flagged: false },
-  { id: 'stu-2', name: 'Mehmet Demir', attended: 11, total: 18, flagged: true },
-  { id: 'stu-3', name: 'Selin Kaya', attended: 17, total: 18, flagged: false },
-];
+import { attendanceService } from '@/services/attendanceService';
 
 export const AttendanceReportPage = () => {
-  const { sectionId } = useParams();
   const toast = useToast();
-  const [section, setSection] = useState(sectionId ?? 'SEC-01');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleExport = () => {
-    toast.info('Rapor PDF olarak indiriliyor (mock)');
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await attendanceService.mySessions();
+      setSessions(data);
+    } catch (err) {
+      setError(err.message || 'Yoklama oturumları yüklenemedi');
+      toast.error(err.message || 'Yoklama oturumları yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <Box>
+        <Typography variant="h4" mb={3}>
+          Yoklama Raporları
+        </Typography>
+        <Alert severity="info">Henüz yoklama oturumu oluşturulmamış.</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Typography variant="h4" mb={3}>
         Yoklama Raporları
       </Typography>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <TextField
-              select
-              label="Section"
-              value={section}
-              onChange={(event) => setSection(event.target.value)}
-              sx={{ minWidth: 200 }}
-            >
-              <MenuItem value="SEC-01">CENG204 - Section 01</MenuItem>
-              <MenuItem value="SEC-02">CENG204 - Section 02</MenuItem>
-            </TextField>
-            <TextField
-              label="Başlangıç"
-              type="date"
-              value={dateFrom}
-              InputLabelProps={{ shrink: true }}
-              onChange={(event) => setDateFrom(event.target.value)}
-            />
-            <TextField
-              label="Bitiş"
-              type="date"
-              value={dateTo}
-              InputLabelProps={{ shrink: true }}
-              onChange={(event) => setDateTo(event.target.value)}
-            />
-            <Button
-              variant="outlined"
-              onClick={handleExport}
-              startIcon={<PictureAsPdfIcon />}
-            >
-              PDF Dışa Aktar
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Öğrenci</TableCell>
-                <TableCell align="center">Katıldığı</TableCell>
-                <TableCell align="center">Toplam</TableCell>
-                <TableCell align="center">Yüzde</TableCell>
-                <TableCell align="center">Durum</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {mockStudents.map((student) => {
-                const percentage = Math.round((student.attended / student.total) * 100);
-                return (
-                  <TableRow key={student.id}>
-                    <TableCell>{student.name}</TableCell>
-                    <TableCell align="center">{student.attended}</TableCell>
-                    <TableCell align="center">{student.total}</TableCell>
-                    <TableCell align="center">{percentage}%</TableCell>
-                    <TableCell align="center">
-                      {student.flagged ? (
-                        <Typography color="error">Flagged</Typography>
-                      ) : (
-                        <Typography color="success.main">OK</Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+
+      <Stack spacing={2}>
+        {sessions.map((session) => (
+          <Card key={session.id}>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
+                  <SchoolIcon color="primary" />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6">
+                      {session.sectionName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {session.sectionId} • Kod: {session.code}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={session.status === 'active' ? 'Aktif' : session.status === 'closed' ? 'Kapalı' : session.status}
+                    color={session.status === 'active' ? 'success' : 'default'}
+                    size="small"
+                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                    {session.recordCount} öğrenci
+                  </Typography>
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Oturum Bilgileri
+                    </Typography>
+                    <Stack direction="row" spacing={2} flexWrap="wrap">
+                      <Typography variant="body2">
+                        <strong>Başlangıç:</strong> {formatDateTime(session.startTime)}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>Bitiş:</strong> {formatDateTime(session.endTime)}
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong>Geofence:</strong> {session.geofenceRadius}m
+                      </Typography>
+                    </Stack>
+                  </Box>
+
+                  <Divider />
+
+                  {session.records && session.records.length > 0 ? (
+                    <>
+                      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Katılan Öğrenciler ({session.records.length})
+                      </Typography>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <PersonIcon fontSize="small" />
+                                <span>Öğrenci</span>
+                              </Stack>
+                            </TableCell>
+                            <TableCell>Numara</TableCell>
+                            <TableCell>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <AccessTimeIcon fontSize="small" />
+                                <span>Katılım Saati</span>
+                              </Stack>
+                            </TableCell>
+                            <TableCell align="center">Mesafe</TableCell>
+                            <TableCell align="center">Durum</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {session.records.map((record) => (
+                            <TableRow key={record.id}>
+                              <TableCell>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {record.student?.fullName || 'Bilinmeyen'}
+                                </Typography>
+                                {record.student?.email && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    {record.student.email}
+                                  </Typography>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {record.student?.studentNumber || '-'}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {formatTime(record.checkedInAt)}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {new Date(record.checkedInAt).toLocaleDateString('tr-TR')}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Typography variant="body2">
+                                  {Math.round(record.distance)}m
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Chip
+                                  label={record.isWithinGeofence ? 'İçinde' : 'Dışında'}
+                                  color={record.isWithinGeofence ? 'success' : 'warning'}
+                                  size="small"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </>
+                  ) : (
+                    <Alert severity="info">Bu oturuma henüz öğrenci katılmamış.</Alert>
+                  )}
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+          </Card>
+        ))}
+      </Stack>
     </Box>
   );
 };
-

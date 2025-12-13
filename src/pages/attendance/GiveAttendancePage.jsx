@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Divider,
   Grid,
   LinearProgress,
@@ -17,57 +18,56 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircleOutline';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SchoolIcon from '@mui/icons-material/School';
+import PersonIcon from '@mui/icons-material/Person';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/useToast';
 import { calculateDistance, formatDistance } from '@/utils/distanceCalculator';
-
-// Mock session data - Backend'den gelecek
-const getMockSessionData = (sessionId) => ({
-  id: sessionId,
-  course: {
-    code: 'CENG204',
-    name: 'Veri Yapıları ve Algoritmalar',
-  },
-  instructor: 'Prof. Dr. Ahmet Yılmaz',
-  startTime: new Date(Date.now() + 30 * 60 * 1000), // 30 dakika sonra
-  endTime: new Date(Date.now() + 90 * 60 * 1000), // 90 dakika sonra
-  classroom: {
-    name: 'B Blok 101',
-    location: {
-      lat: 41.036667, // RTÜ Zihni Derin Kampüsü (41°2'12"N) - Backend'den gelecek (hoca yoklama oluştururken cihazından alınacak)
-      lng: 40.494167, // RTÜ Zihni Derin Kampüsü (40°29'39"E)
-    },
-  },
-  geofenceRadius: 250, // metre - 250 metre içindeki kişiler yoklamaya katılabilir
-});
+import { attendanceService } from '@/services/attendanceService';
 
 export const GiveAttendancePage = () => {
   const { sessionId } = useParams();
   const toast = useToast();
+  const [sessionData, setSessionData] = useState(null);
   const [location, setLocation] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
   const [status, setStatus] = useState('idle'); // idle, loading, ready, success, error
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock session data
-  const sessionData = useMemo(() => getMockSessionData(sessionId), [sessionId]);
+  useEffect(() => {
+    loadSession();
+  }, [sessionId]);
+
+  const loadSession = async () => {
+    try {
+      setIsLoadingSession(true);
+      const data = await attendanceService.getSessionById(sessionId);
+      setSessionData(data);
+    } catch (error) {
+      toast.error(error.message || 'Yoklama oturumu yüklenemedi');
+      setStatus('error');
+    } finally {
+      setIsLoadingSession(false);
+    }
+  };
 
   // Mesafe hesaplama
   const distance = useMemo(() => {
-    if (!location || !sessionData.classroom.location) return null;
+    if (!location || !sessionData?.location) return null;
     return calculateDistance(
       location.lat,
       location.lon,
-      sessionData.classroom.location.lat,
-      sessionData.classroom.location.lng
+      sessionData.location.lat,
+      sessionData.location.lng
     );
   }, [location, sessionData]);
 
   // Geofence içinde mi kontrolü
   const isWithinGeofence = useMemo(() => {
-    if (!distance) return false;
+    if (distance === null || distance === undefined || !sessionData) return false;
     return distance <= sessionData.geofenceRadius;
-  }, [distance, sessionData.geofenceRadius]);
+  }, [distance, sessionData]);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -84,7 +84,7 @@ export const GiveAttendancePage = () => {
         const userLon = result.coords.longitude;
         const userAccuracy = result.coords.accuracy;
 
-        setLocation({ lat: userLat, lon: userLon });
+        setLocation({ lat: userLat, lon: userLon, lng: userLon }); // Store both lon and lng for compatibility
         setAccuracy(userAccuracy);
         setStatus('ready');
         setIsGettingLocation(false);
@@ -97,19 +97,21 @@ export const GiveAttendancePage = () => {
         }
 
         // Mesafe kontrolü
-        const calculatedDistance = calculateDistance(
-          userLat,
-          userLon,
-          sessionData.classroom.location.lat,
-          sessionData.classroom.location.lng
-        );
-
-        if (calculatedDistance > sessionData.geofenceRadius) {
-          toast.warning(
-            `Kampüse uzaklığınız: ${formatDistance(calculatedDistance)}. Geofence yarıçapı: ${sessionData.geofenceRadius}m`
+        if (sessionData) {
+          const calculatedDistance = calculateDistance(
+            userLat,
+            userLon,
+            sessionData.location.lat,
+            sessionData.location.lng
           );
-        } else {
-          toast.success(`Konum başarıyla alındı ve kampüs bölgesi içindesiniz. Mesafe: ${formatDistance(calculatedDistance)}`);
+
+          if (calculatedDistance > sessionData.geofenceRadius) {
+            toast.warning(
+              `Kampüse uzaklığınız: ${formatDistance(calculatedDistance)}. Geofence yarıçapı: ${sessionData.geofenceRadius}m`
+            );
+          } else {
+            toast.success(`Konum başarıyla alındı ve kampüs bölgesi içindesiniz. Mesafe: ${formatDistance(calculatedDistance)}`);
+          }
         }
       },
       (error) => {
@@ -137,7 +139,7 @@ export const GiveAttendancePage = () => {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!location) {
       toast.error('Önce konumunuzu alın.');
       return;
@@ -145,18 +147,48 @@ export const GiveAttendancePage = () => {
 
     if (!isWithinGeofence) {
       toast.warning(
-        `Sınıf bölgesinin dışındasınız. Mesafe: ${formatDistance(distance)}. Devam etmek istediğinizden emin misiniz?`
+        `Sınıf bölgesinin dışındasınız. Mesafe: ${formatDistance(distance)}. Yoklamaya katılamazsınız.`
       );
-      // Burada kullanıcıya onay sorulabilir
+      return;
     }
 
-    setStatus('success');
-    toast.success('Yoklama başarıyla kaydedildi.');
+    try {
+      setIsSubmitting(true);
+      await attendanceService.checkIn(sessionId, {
+        lat: location.lat,
+        lng: location.lon || location.lng // Support both lon and lng
+      });
+      setStatus('success');
+      toast.success('Yoklama başarıyla kaydedildi!');
+    } catch (error) {
+      console.error('Check-in error:', error);
+      toast.error(error.message || 'Yoklamaya katılırken bir hata oluştu');
+      setStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const formatTime = (date) => {
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
     return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (isLoadingSession) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!sessionData) {
+    return (
+      <Box>
+        <Alert severity="error">Yoklama oturumu bulunamadı.</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -170,9 +202,14 @@ export const GiveAttendancePage = () => {
           <Stack spacing={2}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <SchoolIcon color="primary" />
-              <Typography variant="h6">
-                {sessionData.course.code} - {sessionData.course.name}
-              </Typography>
+              <Box>
+                <Typography variant="h6">
+                  {sessionData.sectionId}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {sessionData.sectionName}
+                </Typography>
+              </Box>
             </Stack>
 
             <Divider />
@@ -196,16 +233,29 @@ export const GiveAttendancePage = () => {
                   <LocationOnIcon fontSize="small" color="action" />
                   <Box>
                     <Typography variant="caption" color="text.secondary">
-                      Sınıf
+                      Geofence Yarıçapı
                     </Typography>
-                    <Typography variant="body2">{sessionData.classroom.name}</Typography>
+                    <Typography variant="body2">{sessionData.geofenceRadius}m</Typography>
                   </Box>
                 </Stack>
               </Grid>
+              {sessionData.instructor && (
+                <Grid item xs={12} sm={6}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <PersonIcon fontSize="small" color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Hoca
+                      </Typography>
+                      <Typography variant="body2">{sessionData.instructor.name}</Typography>
+                    </Box>
+                  </Stack>
+                </Grid>
+              )}
             </Grid>
 
             <Typography variant="caption" color="text.secondary">
-              Oturum ID: <strong>{sessionId}</strong>
+              Oturum Kodu: <strong>{sessionData.code}</strong>
             </Typography>
           </Stack>
         </CardContent>
@@ -247,10 +297,10 @@ export const GiveAttendancePage = () => {
                     <Stack spacing={1}>
                       <Box>
                         <Typography variant="subtitle2" color="primary" gutterBottom>
-                          📍 Kampüs Konumu (Ders)
+                          📍 Sınıf Konumu
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          RTÜ Zihni Derin Kampüsü
+                          {sessionData.location.lat.toFixed(6)}, {sessionData.location.lng.toFixed(6)}
                         </Typography>
                       </Box>
 
@@ -282,7 +332,7 @@ export const GiveAttendancePage = () => {
                           </Typography>
                           <Box mt={1}>
                             <Chip
-                              label={isWithinGeofence ? `250 Metre İçinde ✓ (${Math.round(distance)}m)` : `250 Metre Dışında ✗ (${Math.round(distance)}m)`}
+                              label={isWithinGeofence ? `${sessionData.geofenceRadius}m İçinde ✓ (${Math.round(distance)}m)` : `${sessionData.geofenceRadius}m Dışında ✗ (${Math.round(distance)}m)`}
                               color={isWithinGeofence ? 'success' : 'warning'}
                               size="small"
                             />
@@ -296,18 +346,18 @@ export const GiveAttendancePage = () => {
                 <Button
                   variant="contained"
                   size="large"
-                  disabled={status === 'loading' || status === 'success' || !isWithinGeofence}
+                  disabled={status === 'loading' || status === 'success' || isSubmitting || !isWithinGeofence}
                   startIcon={status === 'success' ? <CheckCircleIcon /> : <CheckCircleIcon />}
                   onClick={handleSubmit}
                   fullWidth
                   sx={{ py: 1.5 }}
                   color={isWithinGeofence ? 'primary' : 'error'}
                 >
-                  {status === 'success' ? 'Yoklamaya Katıldınız ✓' : isWithinGeofence ? 'Yoklamaya Katıl' : '250 Metre İçinde Değilsiniz'}
+                  {isSubmitting ? 'Kaydediliyor...' : status === 'success' ? 'Yoklamaya Katıldınız ✓' : isWithinGeofence ? 'Yoklamaya Katıl' : `${sessionData.geofenceRadius}m İçinde Değilsiniz`}
                 </Button>
                 {!isWithinGeofence && distance !== null && (
                   <Alert severity="warning">
-                    Sınıfa uzaklığınız {formatDistance(distance)}. Yoklamaya katılmak için kampüsün 250 metre içinde olmanız gerekiyor.
+                    Sınıfa uzaklığınız {formatDistance(distance)}. Yoklamaya katılmak için {sessionData.geofenceRadius} metre içinde olmanız gerekiyor.
                   </Alert>
                 )}
               </>

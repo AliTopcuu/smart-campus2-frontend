@@ -1,108 +1,203 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
-  Button,
+  Card,
+  CardContent,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
+  CircularProgress,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
+  Alert,
+  Divider,
 } from '@mui/material';
-
-const mockAttendance = [
-  { id: 'CENG101', course: 'Intro to Computer Engineering', total: 20, attended: 17, excused: 1 },
-  { id: 'MATH105', course: 'Calculus I', total: 18, attended: 12, excused: 0 },
-  { id: 'PHYS101', course: 'Physics I', total: 19, attended: 11, excused: 2 },
-];
-
-const getStatus = (attended, total) => {
-  const percentage = Math.round((attended / total) * 100);
-  if (percentage >= 80) return { label: `OK (${percentage}%)`, color: 'success' };
-  if (percentage >= 70) return { label: `Warning (${percentage}%)`, color: 'warning' };
-  return { label: `Critical (${percentage}%)`, color: 'error' };
-};
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import SchoolIcon from '@mui/icons-material/School';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { useToast } from '@/hooks/useToast';
+import { attendanceService } from '@/services/attendanceService';
 
 export const MyAttendancePage = () => {
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const toast = useToast();
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadAttendance();
+  }, []);
+
+  const loadAttendance = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await attendanceService.myAttendance();
+      setAttendanceRecords(data);
+    } catch (err) {
+      setError(err.message || 'Yoklama kayıtları yüklenemedi');
+      toast.error(err.message || 'Yoklama kayıtları yüklenemedi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
+
+  if (attendanceRecords.length === 0) {
+    return (
+      <Box>
+        <Typography variant="h4" mb={3}>
+          Yoklama Durumum
+        </Typography>
+        <Alert severity="info">Henüz hiçbir yoklamaya katılmadınız.</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
       <Typography variant="h4" mb={3}>
         Yoklama Durumum
       </Typography>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Ders</TableCell>
-            <TableCell align="center">Toplam Oturum</TableCell>
-            <TableCell align="center">Katıldığım</TableCell>
-            <TableCell align="center">Mazeret</TableCell>
-            <TableCell align="center">Durum</TableCell>
-            <TableCell align="right">İşlem</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {mockAttendance.map((item) => {
-            const status = getStatus(item.attended + item.excused, item.total);
-            return (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <Typography fontWeight={600}>{item.id}</Typography>
-                  <Typography color="text.secondary">{item.course}</Typography>
-                </TableCell>
-                <TableCell align="center">{item.total}</TableCell>
-                <TableCell align="center">{item.attended}</TableCell>
-                <TableCell align="center">{item.excused}</TableCell>
-                <TableCell align="center">
-                  <Chip label={status.label} color={status.color} size="small" />
-                </TableCell>
-                <TableCell align="right">
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setSelectedCourse(item.id)}
-                  >
-                    Mazeret Talep Et
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
 
-      <Dialog open={Boolean(selectedCourse)} onClose={() => setSelectedCourse(null)}>
-        <DialogTitle>Mazeret Talebi</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {selectedCourse} dersindeki devamsızlığınız için mazeret belirtin.
-          </DialogContentText>
-          <Stack spacing={2} mt={2}>
-            <TextField label="Tarih" type="date" InputLabelProps={{ shrink: true }} />
-            <TextField label="Açıklama" multiline rows={3} />
-            <Button variant="outlined" component="label">
-              Belge Yükle
-              <input type="file" hidden />
-            </Button>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedCourse(null)}>İptal</Button>
-          <Button variant="contained" onClick={() => setSelectedCourse(null)}>
-            Gönder
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <Stack spacing={3}>
+        {attendanceRecords.map((record) => (
+          <Card key={record.id} elevation={2}>
+            <CardContent>
+              <Stack spacing={2}>
+                {/* Session Info */}
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight="bold">
+                      {record.session?.sectionName || record.session?.sectionId || 'Bilinmeyen Ders'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {record.session?.sectionId && (
+                        <>
+                          {record.session.sectionId}
+                          {record.session?.code && ` • Kod: ${record.session.code}`}
+                        </>
+                      )}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    icon={<CheckCircleIcon />}
+                    label={record.isWithinGeofence ? 'Geofence İçinde' : 'Geofence Dışında'}
+                    color={record.isWithinGeofence ? 'success' : 'warning'}
+                    size="small"
+                  />
+                </Stack>
+
+                <Divider />
+
+                {/* Attendance Details */}
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} flexWrap="wrap">
+                    <Box>
+                      <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                        <AccessTimeIcon fontSize="small" color="action" />
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Katılım Tarihi ve Saati
+                        </Typography>
+                      </Stack>
+                      <Typography variant="body1" fontWeight="medium">
+                        {formatDate(record.checkedInAt)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatTime(record.checkedInAt)}
+                      </Typography>
+                    </Box>
+
+                    {record.session?.startTime && (
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                          <AccessTimeIcon fontSize="small" color="action" />
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Oturum Zamanı
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body1" fontWeight="medium">
+                          {formatTime(record.session.startTime)} - {formatTime(record.session.endTime)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {formatDate(record.session.startTime)}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {record.distance !== undefined && (
+                      <Box>
+                        <Stack direction="row" spacing={1} alignItems="center" mb={0.5}>
+                          <LocationOnIcon fontSize="small" color="action" />
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Mesafe
+                          </Typography>
+                        </Stack>
+                        <Typography variant="body1" fontWeight="medium">
+                          {Math.round(record.distance)}m
+                        </Typography>
+                        {record.session?.geofenceRadius && (
+                          <Typography variant="body2" color="text.secondary">
+                            Geofence: {record.session.geofenceRadius}m
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Stack>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
     </Box>
   );
 };
-
