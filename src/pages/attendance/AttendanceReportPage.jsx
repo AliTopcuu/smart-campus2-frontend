@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -20,35 +20,68 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
 import SchoolIcon from '@mui/icons-material/School';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import { useToast } from '@/hooks/useToast';
 import { attendanceService } from '@/services/attendanceService';
+import { sectionService } from '@/services/sectionService';
 
 export const AttendanceReportPage = () => {
   const toast = useToast();
   const [sessions, setSessions] = useState([]);
+  const [allSessions, setAllSessions] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [selectedSectionId, setSelectedSectionId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingSections, setLoadingSections] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     loadSessions();
+    loadSections();
   }, []);
+
+  useEffect(() => {
+    // Section filtresine göre session'ları filtrele
+    if (selectedSectionId === '') {
+      setSessions(allSessions);
+    } else {
+      const filtered = allSessions.filter(session => session.sectionId === parseInt(selectedSectionId));
+      setSessions(filtered);
+    }
+  }, [selectedSectionId, allSessions]);
 
   const loadSessions = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await attendanceService.mySessions();
+      setAllSessions(data);
       setSessions(data);
     } catch (err) {
       setError(err.message || 'Yoklama oturumları yüklenemedi');
       toast.error(err.message || 'Yoklama oturumları yüklenemedi');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSections = async () => {
+    try {
+      setLoadingSections(true);
+      const data = await sectionService.mySections();
+      setSections(data);
+    } catch (err) {
+      console.error('Sections yüklenemedi:', err);
+    } finally {
+      setLoadingSections(false);
     }
   };
 
@@ -88,22 +121,87 @@ export const AttendanceReportPage = () => {
     );
   }
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && !loading) {
     return (
       <Box>
-        <Typography variant="h4" mb={3}>
-          Yoklama Raporları
-        </Typography>
-        <Alert severity="info">Henüz yoklama oturumu oluşturulmamış.</Alert>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4">
+            Yoklama Raporları
+          </Typography>
+          <FormControl sx={{ minWidth: 250 }} size="small">
+            <InputLabel id="section-filter-label-empty">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <FilterListIcon fontSize="small" />
+                <span>Ders Filtrele</span>
+              </Stack>
+            </InputLabel>
+            <Select
+              labelId="section-filter-label-empty"
+              value={selectedSectionId}
+              label="Ders Filtrele"
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              disabled={loadingSections}
+            >
+              <MenuItem value="">
+                <em>Tüm Dersler</em>
+              </MenuItem>
+              {sections.map((section) => (
+                <MenuItem key={section.id} value={section.id}>
+                  {section.course?.code || 'N/A'} - {section.course?.name || 'Bilinmeyen Ders'} 
+                  {section.sectionNumber && ` (Section ${section.sectionNumber})`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+        <Alert severity="info">
+          {selectedSectionId 
+            ? 'Seçili ders için henüz yoklama oturumu oluşturulmamış.' 
+            : 'Henüz yoklama oturumu oluşturulmamış.'}
+        </Alert>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Typography variant="h4" mb={3}>
-        Yoklama Raporları
-      </Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">
+          Yoklama Raporları
+        </Typography>
+        <FormControl sx={{ minWidth: 250 }} size="small">
+          <InputLabel id="section-filter-label">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <FilterListIcon fontSize="small" />
+              <span>Ders Filtrele</span>
+            </Stack>
+          </InputLabel>
+          <Select
+            labelId="section-filter-label"
+            value={selectedSectionId}
+            label="Ders Filtrele"
+            onChange={(e) => setSelectedSectionId(e.target.value)}
+            disabled={loadingSections}
+          >
+            <MenuItem value="">
+              <em>Tüm Dersler</em>
+            </MenuItem>
+            {sections.map((section) => (
+              <MenuItem key={section.id} value={section.id}>
+                {section.course?.code || 'N/A'} - {section.course?.name || 'Bilinmeyen Ders'} 
+                {section.sectionNumber && ` (Section ${section.sectionNumber})`}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
+
+      {selectedSectionId && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {sections.find(s => s.id === parseInt(selectedSectionId))?.course?.code || 'Seçili ders'} 
+          {' '}dersine ait {sessions.length} yoklama oturumu gösteriliyor.
+        </Alert>
+      )}
 
       <Stack spacing={2}>
         {sessions.map((session) => (
@@ -196,21 +294,23 @@ export const AttendanceReportPage = () => {
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2">
-                                  {formatTime(record.checkedInAt)}
+                                  {formatTime(record.checkInTime || record.checkedInAt)}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  {new Date(record.checkedInAt).toLocaleDateString('tr-TR')}
+                                  {new Date(record.checkInTime || record.checkedInAt).toLocaleDateString('tr-TR')}
                                 </Typography>
                               </TableCell>
                               <TableCell align="center">
                                 <Typography variant="body2">
-                                  {Math.round(record.distance)}m
+                                  {record.distanceFromCenter || record.distance 
+                                    ? `${Math.round(record.distanceFromCenter || record.distance)}m`
+                                    : 'N/A'}
                                 </Typography>
                               </TableCell>
                               <TableCell align="center">
                                 <Chip
-                                  label={record.isWithinGeofence ? 'İçinde' : 'Dışında'}
-                                  color={record.isWithinGeofence ? 'success' : 'warning'}
+                                  label={record.isFlagged ? 'İşaretli' : (record.isWithinGeofence !== false ? 'Normal' : 'Dışında')}
+                                  color={record.isFlagged ? 'warning' : (record.isWithinGeofence !== false ? 'success' : 'error')}
                                   size="small"
                                 />
                               </TableCell>

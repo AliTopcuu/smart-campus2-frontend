@@ -85,7 +85,14 @@ export const CourseDetailPage = () => {
       await refetch().catch(err => console.error('Error refetching course:', err));
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || error?.message || 'Onaylama sırasında hata oluştu');
+      console.error('Approve enrollment error:', error);
+      const errorMessage = error?.response?.data?.message || 
+                          error?.message || 
+                          (error?.response?.status === 403 ? 'Bu section için yetkiniz yok' : 
+                           error?.response?.status === 404 ? 'Kayıt bulunamadı' :
+                           error?.response?.status === 400 ? 'Geçersiz işlem' :
+                           'Onaylama sırasında hata oluştu');
+      toast.error(errorMessage);
     },
   });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
@@ -25,8 +25,6 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(loginSchema),
@@ -37,25 +35,6 @@ export const LoginPage = () => {
     },
   });
 
-  // Parallax efekti için mouse hareketini dinle
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 100;
-        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 100;
-        setMousePosition({ x, y });
-      }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      return () => {
-        container.removeEventListener('mousemove', handleMouseMove);
-      };
-    }
-  }, []);
 
   const onSubmit = async (values) => {
     try {
@@ -75,7 +54,6 @@ export const LoginPage = () => {
 
   return (
     <Box
-      ref={containerRef}
       sx={{
         minHeight: '100vh',
         position: 'relative',
@@ -87,33 +65,6 @@ export const LoginPage = () => {
         background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%)',
       }}
     >
-      {/* Parallax arka plan - Logo resmi */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: 'url(/university-logo.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.2,
-          transform: `translate(${-mousePosition.x * 0.3}px, ${-mousePosition.y * 0.3}px)`,
-          transition: 'transform 0.1s ease-out',
-          zIndex: 0,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.9) 50%, rgba(30, 41, 59, 0.85) 100%)',
-          },
-        }}
-      />
       
       {/* Gradient overlay */}
       <Box
