@@ -170,8 +170,13 @@ export const GiveAttendancePage = () => {
   };
 
   const formatTime = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('tr-TR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Europe/Istanbul',
+    });
   };
 
   if (isLoadingSession) {

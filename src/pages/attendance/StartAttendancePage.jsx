@@ -148,7 +148,7 @@ export const StartAttendancePage = () => {
       setSessionInfo({
         id: result.id,
         qrCode: result.qrCode,
-        expiresAt: result.endTime ? new Date(`${result.date} ${result.endTime}`).toLocaleTimeString('tr-TR') : 'Açık',
+        expiresAt: result.endTime ? new Date(`${result.date}T${result.endTime}+03:00`).toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'Açık',
         location: { lat: result.latitude, lng: result.longitude },
         radius: result.geofenceRadius,
       });

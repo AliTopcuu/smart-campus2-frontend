@@ -86,6 +86,7 @@ export const AttendanceReportPage = () => {
   };
 
   const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleString('tr-TR', {
       day: '2-digit',
@@ -93,15 +94,18 @@ export const AttendanceReportPage = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Europe/Istanbul',
     });
   };
 
   const formatTime = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleTimeString('tr-TR', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      timeZone: 'Europe/Istanbul',
     });
   };
 
