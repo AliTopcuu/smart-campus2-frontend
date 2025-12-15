@@ -172,6 +172,7 @@ export const GiveAttendancePage = () => {
   const formatTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
     return date.toLocaleTimeString('tr-TR', { 
       hour: '2-digit', 
       minute: '2-digit',
