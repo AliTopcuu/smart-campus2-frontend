@@ -158,29 +158,45 @@ export const CourseManagementPage = () => {
     },
   });
 
-  const handleOpenDialog = (course = null) => {
+  const handleOpenDialog = async (course = null) => {
     if (course) {
-      setEditingCourse(course);
-      // Handle departmentId - it might be in course.department.id or course.departmentId
-      const deptId = course.departmentId 
-        || (typeof course.department === 'object' ? course.department?.id : null)
-        || null;
-      
-      // Extract prerequisite IDs from course.prerequisites array
-      const prereqIds = course.prerequisites?.map(prereq => 
-        prereq.prerequisiteCourseId || prereq.prerequisite?.id || prereq.id
-      ).filter(Boolean) || [];
-      
-      setFormData({
-        code: course.code || '',
-        name: course.name || '',
-        description: course.description || '',
-        credits: course.credits?.toString() || '',
-        ects: course.ects?.toString() || '',
-        syllabusUrl: course.syllabusUrl || '',
-        departmentId: deptId?.toString() || '',
-        prerequisiteIds: prereqIds,
-      });
+      try {
+        // Fetch full course details with prerequisites
+        const fullCourse = await courseService.getById(course.id);
+        setEditingCourse(fullCourse);
+        
+        // Handle departmentId - it might be in course.department.id or course.departmentId
+        const deptId = fullCourse.departmentId 
+          || (typeof fullCourse.department === 'object' ? fullCourse.department?.id : null)
+          || null;
+        
+        // Extract prerequisite IDs from course.prerequisites array
+        const prereqIds = fullCourse.prerequisites?.map(prereq => {
+          // Try different possible structures
+          return prereq.prerequisiteCourseId 
+            || prereq.prerequisite?.id 
+            || (prereq.prerequisite && prereq.prerequisite.id)
+            || prereq.id;
+        }).filter(Boolean).map(id => id.toString()) || [];
+        
+        console.log('Course prerequisites:', fullCourse.prerequisites);
+        console.log('Extracted prerequisite IDs:', prereqIds);
+        
+        setFormData({
+          code: fullCourse.code || '',
+          name: fullCourse.name || '',
+          description: fullCourse.description || '',
+          credits: fullCourse.credits?.toString() || '',
+          ects: fullCourse.ects?.toString() || '',
+          syllabusUrl: fullCourse.syllabusUrl || '',
+          departmentId: deptId?.toString() || '',
+          prerequisiteIds: prereqIds,
+        });
+      } catch (error) {
+        console.error('Error loading course details:', error);
+        toast.error('Ders bilgileri yüklenirken bir hata oluştu');
+        return;
+      }
     } else {
       setEditingCourse(null);
       setFormData({
@@ -428,10 +444,11 @@ export const CourseManagementPage = () => {
               ))}
             </TextField>
             <FormControl fullWidth>
-              <InputLabel>Ön Koşul Dersler</InputLabel>
+              <InputLabel id="prerequisite-select-label">Ön Koşul Dersler</InputLabel>
               <Select
+                labelId="prerequisite-select-label"
                 multiple
-                value={formData.prerequisiteIds}
+                value={formData.prerequisiteIds || []}
                 onChange={(e) => {
                   const value = typeof e.target.value === 'string' 
                     ? e.target.value.split(',') 
@@ -440,9 +457,20 @@ export const CourseManagementPage = () => {
                 }}
                 input={<OutlinedInput label="Ön Koşul Dersler" />}
                 renderValue={(selected) => {
-                  if (selected.length === 0) return 'Ön koşul seçilmedi';
+                  if (!selected || selected.length === 0) return 'Ön koşul seçilmedi';
                   const selectedCourses = courses?.filter(c => selected.includes(c.id.toString()));
-                  return selectedCourses?.map(c => `${c.code} - ${c.name}`).join(', ') || '';
+                  if (selectedCourses.length === 0) return 'Ön koşul seçilmedi';
+                  return (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selectedCourses.map((course) => (
+                        <Chip 
+                          key={course.id} 
+                          label={`${course.code} - ${course.name}`}
+                          size="small"
+                        />
+                      ))}
+                    </Box>
+                  );
                 }}
                 disabled={!courses || courses.length === 0}
               >
@@ -450,15 +478,15 @@ export const CourseManagementPage = () => {
                   !editingCourse || course.id !== editingCourse.id
                 ).map((course) => (
                   <MenuItem key={course.id} value={course.id.toString()}>
-                    <Checkbox checked={formData.prerequisiteIds.includes(course.id.toString())} />
+                    <Checkbox checked={(formData.prerequisiteIds || []).includes(course.id.toString())} />
                     <ListItemText 
                       primary={`${course.code} - ${course.name}`}
-                      secondary={course.department?.name || ''}
+                      secondary={course.department?.name || course.departmentId || ''}
                     />
                   </MenuItem>
                 ))}
               </Select>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                 Bu dersi almak için öğrencilerin geçmesi gereken dersleri seçin
               </Typography>
             </FormControl>
