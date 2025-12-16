@@ -221,10 +221,9 @@ export const ScanQRCodePage = () => {
         lng: lon
       });
       toast.success('Yoklama başarıyla kaydedildi!');
-      // Başarılı olduktan sonra aktif yoklamalar sayfasına yönlendir
-      setTimeout(() => {
-        navigate('/attendance/active');
-      }, 1500);
+      // Başarılı olduktan sonra formu temizle
+      setCodeInput('');
+      setLocation(null);
     } catch (error) {
       console.error('Check-in by code error:', error);
       toast.error(error.message || 'Yoklamaya katılırken bir hata oluştu');
