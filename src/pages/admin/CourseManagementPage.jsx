@@ -6,13 +6,20 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   IconButton,
+  InputLabel,
+  ListItemText,
   MenuItem,
+  OutlinedInput,
+  Select,
   Stack,
   Table,
   TableBody,
@@ -45,6 +52,7 @@ export const CourseManagementPage = () => {
     ects: '',
     syllabusUrl: '',
     departmentId: '',
+    prerequisiteIds: [],
   });
 
   const { data: courses, isLoading, isError, error, refetch } = useQuery({
@@ -158,6 +166,11 @@ export const CourseManagementPage = () => {
         || (typeof course.department === 'object' ? course.department?.id : null)
         || null;
       
+      // Extract prerequisite IDs from course.prerequisites array
+      const prereqIds = course.prerequisites?.map(prereq => 
+        prereq.prerequisiteCourseId || prereq.prerequisite?.id || prereq.id
+      ).filter(Boolean) || [];
+      
       setFormData({
         code: course.code || '',
         name: course.name || '',
@@ -166,6 +179,7 @@ export const CourseManagementPage = () => {
         ects: course.ects?.toString() || '',
         syllabusUrl: course.syllabusUrl || '',
         departmentId: deptId?.toString() || '',
+        prerequisiteIds: prereqIds,
       });
     } else {
       setEditingCourse(null);
@@ -177,6 +191,7 @@ export const CourseManagementPage = () => {
         ects: '',
         syllabusUrl: '',
         departmentId: '',
+        prerequisiteIds: [],
       });
     }
     setOpenDialog(true);
@@ -193,6 +208,7 @@ export const CourseManagementPage = () => {
       ects: '',
       syllabusUrl: '',
       departmentId: '',
+      prerequisiteIds: [],
     });
   };
 
@@ -216,6 +232,7 @@ export const CourseManagementPage = () => {
       ects: parseInt(formData.ects, 10),
       syllabusUrl: formData.syllabusUrl.trim() || undefined,
       departmentId: parseInt(formData.departmentId, 10),
+      prerequisiteIds: formData.prerequisiteIds.map(id => parseInt(id, 10)),
     };
 
     if (editingCourse) {
@@ -410,6 +427,41 @@ export const CourseManagementPage = () => {
                 </MenuItem>
               ))}
             </TextField>
+            <FormControl fullWidth>
+              <InputLabel>Ön Koşul Dersler</InputLabel>
+              <Select
+                multiple
+                value={formData.prerequisiteIds}
+                onChange={(e) => {
+                  const value = typeof e.target.value === 'string' 
+                    ? e.target.value.split(',') 
+                    : e.target.value;
+                  setFormData({ ...formData, prerequisiteIds: value });
+                }}
+                input={<OutlinedInput label="Ön Koşul Dersler" />}
+                renderValue={(selected) => {
+                  if (selected.length === 0) return 'Ön koşul seçilmedi';
+                  const selectedCourses = courses?.filter(c => selected.includes(c.id.toString()));
+                  return selectedCourses?.map(c => `${c.code} - ${c.name}`).join(', ') || '';
+                }}
+                disabled={!courses || courses.length === 0}
+              >
+                {courses?.filter(course => 
+                  !editingCourse || course.id !== editingCourse.id
+                ).map((course) => (
+                  <MenuItem key={course.id} value={course.id.toString()}>
+                    <Checkbox checked={formData.prerequisiteIds.includes(course.id.toString())} />
+                    <ListItemText 
+                      primary={`${course.code} - ${course.name}`}
+                      secondary={course.department?.name || ''}
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                Bu dersi almak için öğrencilerin geçmesi gereken dersleri seçin
+              </Typography>
+            </FormControl>
           </Stack>
         </DialogContent>
         <DialogActions>
