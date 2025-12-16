@@ -13,14 +13,19 @@ import {
   Fade,
   Zoom,
   Container,
+  TextField,
+  LinearProgress,
+  Divider,
 } from '@mui/material';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import StopIcon from '@mui/icons-material/Stop';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import LocationSearchingIcon from '@mui/icons-material/LocationSearching';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useToast } from '@/hooks/useToast';
+import { attendanceService } from '@/services/attendanceService';
 
 export const ScanQRCodePage = () => {
   const navigate = useNavigate();
@@ -28,6 +33,10 @@ export const ScanQRCodePage = () => {
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(null);
   const [html5QrCode, setHtml5QrCode] = useState(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [location, setLocation] = useState(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -158,6 +167,81 @@ export const ScanQRCodePage = () => {
     }
   };
 
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Tarayıcınız konum servislerini desteklemiyor.');
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (result) => {
+        const userLat = result.coords.latitude;
+        const userLon = result.coords.longitude;
+        setLocation({ lat: userLat, lon: userLon, lng: userLon });
+        setIsGettingLocation(false);
+        toast.success('Konum başarıyla alındı');
+        handleCheckInByCode(userLat, userLon);
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        let errorMessage = 'Konum alınamadı.';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Konum bilgisi alınamıyor.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Konum alma işlemi zaman aşımına uğradı.';
+            break;
+        }
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handleCheckInByCode = async (lat, lon) => {
+    if (!codeInput.trim()) {
+      toast.error('Lütfen yoklama kodunu girin');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await attendanceService.checkInByCode(codeInput.trim(), {
+        lat: lat,
+        lng: lon
+      });
+      toast.success('Yoklama başarıyla kaydedildi!');
+      // Başarılı olduktan sonra aktif yoklamalar sayfasına yönlendir
+      setTimeout(() => {
+        navigate('/attendance/active');
+      }, 1500);
+    } catch (error) {
+      console.error('Check-in by code error:', error);
+      toast.error(error.message || 'Yoklamaya katılırken bir hata oluştu');
+      setIsGettingLocation(false); // Hata durumunda loading state'ini sıfırla
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCodeSubmit = () => {
+    if (!codeInput.trim()) {
+      toast.error('Lütfen yoklama kodunu girin');
+      return;
+    }
+    getLocation();
+  };
+
   return (
     <Container maxWidth="md">
       <Box sx={{ py: 4 }}>
@@ -252,6 +336,62 @@ export const ScanQRCodePage = () => {
                     >
                       Kamerayı Aç ve Tara
                     </Button>
+                    
+                    <Divider sx={{ width: '100%', my: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        VEYA
+                      </Typography>
+                    </Divider>
+
+                    <Stack spacing={2} sx={{ width: '100%', maxWidth: 400 }}>
+                      <TextField
+                        label="Yoklama Kodu"
+                        value={codeInput}
+                        onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                        placeholder="Örn: QR-ABC123"
+                        fullWidth
+                        disabled={isGettingLocation || isSubmitting}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            fontFamily: 'monospace',
+                            fontSize: '1.1rem',
+                            letterSpacing: 1,
+                          },
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleCodeSubmit();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="outlined"
+                        size="large"
+                        startIcon={<LocationSearchingIcon />}
+                        onClick={handleCodeSubmit}
+                        disabled={!codeInput.trim() || isGettingLocation || isSubmitting}
+                        fullWidth
+                        sx={{
+                          py: 1.5,
+                          borderRadius: 3,
+                          borderWidth: 2,
+                          textTransform: 'none',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Kod ile Katıl
+                      </Button>
+                    </Stack>
+
+                    {(isGettingLocation || isSubmitting) && (
+                      <Box sx={{ width: '100%', maxWidth: 400 }}>
+                        <LinearProgress />
+                        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
+                          {isGettingLocation ? 'Konum alınıyor...' : 'Yoklamaya katılılıyor...'}
+                        </Typography>
+                      </Box>
+                    )}
                   </Stack>
                 </Fade>
               )}
