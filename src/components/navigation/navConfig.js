@@ -11,6 +11,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedInRounde
 import CheckCircleIcon from '@mui/icons-material/CheckCircleRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import GroupIcon from '@mui/icons-material/GroupRounded';
+import DoneAllIcon from '@mui/icons-material/DoneAllRounded';
 export const navItems = [
     {
         label: 'Dashboard',
@@ -31,6 +32,12 @@ export const navItems = [
         label: 'Derslerim',
         path: '/my-courses',
         icon: ClassIcon,
+        roles: ['student'],
+    },
+    {
+        label: 'Bitirilmiş Dersler',
+        path: '/completed-courses',
+        icon: DoneAllIcon,
         roles: ['student'],
     },
     {

@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import {
   ActiveSessionsPage,
   AttendanceReportPage,
+  CompletedCoursesPage,
   DashboardPage,
   CoursesPage,
   CourseDetailPage,
@@ -76,6 +77,10 @@ export const router = createBrowserRouter([
       {
         path: '/my-courses',
         element: <ProtectedRoute roles={['student']}><MyCoursesPage /></ProtectedRoute>,
+      },
+      {
+        path: '/completed-courses',
+        element: <ProtectedRoute roles={['student']}><CompletedCoursesPage /></ProtectedRoute>,
       },
       {
         path: '/grades',

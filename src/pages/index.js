@@ -10,6 +10,7 @@ export { CoursesPage } from './courses/CoursesPage';
 export { CourseDetailPage } from './courses/CourseDetailPage';
 export { MyCoursesPage } from './courses/MyCoursesPage';
 export { MySectionsPage } from './courses/MySectionsPage';
+export { CompletedCoursesPage } from './courses/CompletedCoursesPage';
 export { GradesPage } from './grades/GradesPage';
 export { GradebookPage } from './grades/GradebookPage';
 export { StartAttendancePage } from './attendance/StartAttendancePage';
