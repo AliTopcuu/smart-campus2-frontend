@@ -23,6 +23,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SchoolIcon from '@mui/icons-material/School';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useToast } from '@/hooks/useToast';
 import { attendanceService } from '@/services/attendanceService';
@@ -224,6 +225,9 @@ export const MyAttendancePage = () => {
                             {session.attended ? (
                               <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
                                 <CheckCircleIcon color="success" />
+                                {session.isExcused && (
+                                  <WarningAmberIcon color="warning" sx={{ fontSize: 20 }} />
+                                )}
                                 <Typography variant="body2" color="success.main" fontWeight="medium">
                                   {formatTime(session.checkInTime)}
                                 </Typography>

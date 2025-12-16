@@ -29,6 +29,8 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import PersonIcon from '@mui/icons-material/Person';
 import SchoolIcon from '@mui/icons-material/School';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useToast } from '@/hooks/useToast';
 import { attendanceService } from '@/services/attendanceService';
 import { sectionService } from '@/services/sectionService';
@@ -312,11 +314,17 @@ export const AttendanceReportPage = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell align="center">
-                                <Chip
-                                  label={record.isFlagged ? 'İşaretli' : (record.isWithinGeofence !== false ? 'Normal' : 'Dışında')}
-                                  color={record.isFlagged ? 'warning' : (record.isWithinGeofence !== false ? 'success' : 'error')}
-                                  size="small"
-                                />
+                                <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                                  <CheckCircleIcon color="success" sx={{ fontSize: 20 }} />
+                                  {record.isExcused && (
+                                    <WarningAmberIcon color="warning" sx={{ fontSize: 20 }} />
+                                  )}
+                                  <Chip
+                                    label={record.isExcused ? 'Mazeretli' : (record.isFlagged ? 'İşaretli' : (record.isWithinGeofence !== false ? 'Normal' : 'Dışında'))}
+                                    color={record.isExcused ? 'warning' : (record.isFlagged ? 'warning' : (record.isWithinGeofence !== false ? 'success' : 'error'))}
+                                    size="small"
+                                  />
+                                </Stack>
                               </TableCell>
                             </TableRow>
                           ))}
