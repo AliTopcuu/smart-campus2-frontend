@@ -158,17 +158,25 @@ export const CourseDetailPage = () => {
     }
     return (
       <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
-        {course.prerequisites.map((prereq) => (
-          <Chip
-            key={prereq.id || prereq.courseId}
-            label={`${prereq.code || prereq.courseCode} - ${prereq.name || prereq.courseName}`}
-            size="small"
-            component={Link}
-            to={`/courses/${prereq.id || prereq.courseId || prereq.prerequisiteCourseId}`}
-            clickable
-            sx={{ cursor: 'pointer' }}
-          />
-        ))}
+        {course.prerequisites.map((prereq) => {
+          // Backend'den gelen prerequisite verisi prerequisite ilişkisi üzerinden geliyor
+          const prerequisiteCourse = prereq.prerequisite || prereq;
+          const courseCode = prerequisiteCourse?.code || prereq.code || prereq.courseCode || 'N/A';
+          const courseName = prerequisiteCourse?.name || prereq.name || prereq.courseName || 'Bilinmeyen Ders';
+          const courseId = prerequisiteCourse?.id || prereq.id || prereq.courseId || prereq.prerequisiteCourseId;
+          
+          return (
+            <Chip
+              key={prereq.id || courseId}
+              label={`${courseCode} - ${courseName}`}
+              size="small"
+              component={Link}
+              to={`/courses/${courseId}`}
+              clickable
+              sx={{ cursor: 'pointer' }}
+            />
+          );
+        })}
       </Stack>
     );
   };
