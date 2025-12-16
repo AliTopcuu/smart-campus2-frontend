@@ -15,7 +15,7 @@ export const StartAttendancePage = () => {
   const [sections, setSections] = useState([]);
   const [loadingSections, setLoadingSections] = useState(true);
   const [selectedSectionId, setSelectedSectionId] = useState('');
-  const [radius, setRadius] = useState(250); // Default 250 metre
+  const [radius, setRadius] = useState(15); // Default 15 metre
   const [duration, setDuration] = useState(30);
   const [sessionInfo, setSessionInfo] = useState(null);
   const [classroomLocation, setClassroomLocation] = useState(null);
@@ -259,7 +259,7 @@ export const StartAttendancePage = () => {
                 value={radius}
                 onChange={(event) => setRadius(Number(event.target.value))}
                 fullWidth
-                helperText="Kampüs çevresindeki yarıçap (default: 250m)"
+                helperText="Kampüs çevresindeki yarıçap (default: 15m)"
               />
               <TextField
                 label="Süre (dakika)"
