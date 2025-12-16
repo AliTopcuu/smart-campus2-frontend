@@ -134,60 +134,36 @@ export const ScanQRCodePage = () => {
     // Stop scanning
     stopScanning();
 
+    // Extract session ID from URL
+    // Expected format: /attendance/checkin/{sessionId}
     try {
-      // QR kod formatı: /attendance/give/{sessionId} veya /attendance/checkin/{sessionId}
-      let sessionId = null;
+      const url = new URL(decodedText);
+      const pathParts = url.pathname.split('/');
+      const sessionIdIndex = pathParts.indexOf('checkin');
       
-      // URL olarak parse etmeye çalış
-      try {
-        const url = new URL(decodedText);
-        const pathParts = url.pathname.split('/').filter(part => part); // Boş string'leri filtrele
-        
-        // 'give' veya 'checkin' path'ini ara
-        const giveIndex = pathParts.indexOf('give');
-        const checkinIndex = pathParts.indexOf('checkin');
-        const targetIndex = giveIndex !== -1 ? giveIndex : checkinIndex;
-        
-        if (targetIndex !== -1 && pathParts[targetIndex + 1]) {
-          sessionId = pathParts[targetIndex + 1];
-        }
-      } catch (urlError) {
-        // URL değilse, direkt path olarak dene
-        const pathParts = decodedText.split('/').filter(part => part);
-        const giveIndex = pathParts.indexOf('give');
-        const checkinIndex = pathParts.indexOf('checkin');
-        const targetIndex = giveIndex !== -1 ? giveIndex : checkinIndex;
-        
-        if (targetIndex !== -1 && pathParts[targetIndex + 1]) {
-          sessionId = pathParts[targetIndex + 1];
-        } else if (pathParts.length > 0) {
-          // Son kısım sessionId olabilir
-          const lastPart = pathParts[pathParts.length - 1];
-          if (lastPart && !isNaN(lastPart)) {
-            sessionId = lastPart;
-          }
-        }
-      }
-      
-      // SessionId bulunamadıysa, direkt sayı olarak kontrol et
-      if (!sessionId) {
-        const trimmed = decodedText.trim();
-        if (trimmed && !isNaN(trimmed)) {
-          sessionId = trimmed;
-        }
-      }
-      
-      if (sessionId && !isNaN(sessionId)) {
+      if (sessionIdIndex !== -1 && pathParts[sessionIdIndex + 1]) {
+        const sessionId = pathParts[sessionIdIndex + 1];
         toast.success('QR kod başarıyla okundu!');
-        // /attendance/give/{sessionId} route'una yönlendir
-        navigate(`/attendance/give/${sessionId}`);
+        navigate(`/attendance/checkin/${sessionId}`);
       } else {
-        throw new Error('QR kod içinde geçerli oturum ID\'si bulunamadı');
+        // Try to extract session ID directly if it's just a number
+        const sessionId = decodedText.split('/').pop();
+        if (sessionId && !isNaN(sessionId)) {
+          toast.success('QR kod başarıyla okundu!');
+          navigate(`/attendance/checkin/${sessionId}`);
+        } else {
+          throw new Error('Geçersiz QR kod formatı');
+        }
       }
     } catch (err) {
-      console.error('QR kod parse hatası:', err, 'Decoded text:', decodedText);
-      setError('Geçersiz QR kod. Lütfen geçerli bir yoklama QR kodu tarayın.');
-      toast.error('Geçersiz QR kod');
+      // If it's not a URL, try to use it as session ID directly
+      if (decodedText && !isNaN(decodedText)) {
+        toast.success('QR kod başarıyla okundu!');
+        navigate(`/attendance/checkin/${decodedText}`);
+      } else {
+        setError('Geçersiz QR kod. Lütfen geçerli bir yoklama QR kodu tarayın.');
+        toast.error('Geçersiz QR kod');
+      }
     }
   };
 
