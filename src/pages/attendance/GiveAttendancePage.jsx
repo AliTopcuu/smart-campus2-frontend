@@ -169,6 +169,41 @@ export const GiveAttendancePage = () => {
     }
   };
 
+  const handleSubmitByCode = async () => {
+    if (!location) {
+      toast.error('Önce konumunuzu alın.');
+      return;
+    }
+
+    if (!sessionData?.code) {
+      toast.error('Yoklama kodu bulunamadı.');
+      return;
+    }
+
+    if (!isWithinGeofence) {
+      toast.warning(
+        `Sınıf bölgesinin dışındasınız. Mesafe: ${formatDistance(distance)}. Yoklamaya katılamazsınız.`
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await attendanceService.checkInByCode(sessionData.code, {
+        lat: location.lat,
+        lng: location.lon || location.lng // Support both lon and lng
+      });
+      setStatus('success');
+      toast.success('Yoklama başarıyla kaydedildi!');
+    } catch (error) {
+      console.error('Check-in by code error:', error);
+      toast.error(error.message || 'Yoklamaya katılırken bir hata oluştu');
+      setStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const formatTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -260,9 +295,32 @@ export const GiveAttendancePage = () => {
               )}
             </Grid>
 
-            <Typography variant="caption" color="text.secondary">
-              Oturum Kodu: <strong>{sessionData.code}</strong>
-            </Typography>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: 'primary.light',
+                borderRadius: 2,
+                textAlign: 'center',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                Yoklama Kodu:
+              </Typography>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                  color: 'primary.dark',
+                }}
+              >
+                {sessionData.code}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Bu kod ile de yoklamaya katılabilirsiniz
+              </Typography>
+            </Box>
           </Stack>
         </CardContent>
       </Card>
@@ -349,18 +407,35 @@ export const GiveAttendancePage = () => {
                   </Alert>
                 </Stack>
 
-                <Button
-                  variant="contained"
-                  size="large"
-                  disabled={status === 'loading' || status === 'success' || isSubmitting || !isWithinGeofence}
-                  startIcon={status === 'success' ? <CheckCircleIcon /> : <CheckCircleIcon />}
-                  onClick={handleSubmit}
-                  fullWidth
-                  sx={{ py: 1.5 }}
-                  color={isWithinGeofence ? 'primary' : 'error'}
-                >
-                  {isSubmitting ? 'Kaydediliyor...' : status === 'success' ? 'Yoklamaya Katıldınız ✓' : isWithinGeofence ? 'Yoklamaya Katıl' : `${sessionData.geofenceRadius}m İçinde Değilsiniz`}
-                </Button>
+                <Stack spacing={2}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    disabled={status === 'loading' || status === 'success' || isSubmitting || !isWithinGeofence}
+                    startIcon={status === 'success' ? <CheckCircleIcon /> : <CheckCircleIcon />}
+                    onClick={handleSubmit}
+                    fullWidth
+                    sx={{ py: 1.5 }}
+                    color={isWithinGeofence ? 'primary' : 'error'}
+                  >
+                    {isSubmitting ? 'Kaydediliyor...' : status === 'success' ? 'Yoklamaya Katıldınız ✓' : isWithinGeofence ? 'QR Kod ile Katıl' : `${sessionData.geofenceRadius}m İçinde Değilsiniz`}
+                  </Button>
+                  
+                  {sessionData?.code && (
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      disabled={status === 'loading' || status === 'success' || isSubmitting || !isWithinGeofence}
+                      startIcon={<CheckCircleIcon />}
+                      onClick={handleSubmitByCode}
+                      fullWidth
+                      sx={{ py: 1.5 }}
+                      color={isWithinGeofence ? 'primary' : 'error'}
+                    >
+                      {isSubmitting ? 'Kaydediliyor...' : status === 'success' ? 'Yoklamaya Katıldınız ✓' : isWithinGeofence ? `Kod ile Katıl (${sessionData.code})` : `${sessionData.geofenceRadius}m İçinde Değilsiniz`}
+                    </Button>
+                  )}
+                </Stack>
                 {!isWithinGeofence && distance !== null && (
                   <Alert severity="warning">
                     Sınıfa uzaklığınız {formatDistance(distance)}. Yoklamaya katılmak için {sessionData.geofenceRadius} metre içinde olmanız gerekiyor.

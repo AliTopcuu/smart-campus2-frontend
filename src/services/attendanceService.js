@@ -24,6 +24,10 @@ export const attendanceService = {
         const { data } = await apiClient.post(`/attendance/sessions/${sessionId}/checkin`, payload);
         return data;
     },
+    checkInByCode: async (code, payload) => {
+        const { data } = await apiClient.post(`/attendance/sessions/code/${code}/checkin`, payload);
+        return data;
+    },
     myAttendance: async () => {
         const { data } = await apiClient.get('/attendance/my-attendance');
         return data;

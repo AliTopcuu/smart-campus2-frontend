@@ -286,7 +286,7 @@ export const StartAttendancePage = () => {
                 <Stack direction="row" spacing={2} alignItems="center" mt={2}>
                   <Box>
                     <Typography variant="body2">
-                      <strong>Kod:</strong> {sessionInfo.code}
+                      <strong>Kod:</strong> {sessionInfo.qrCode || sessionInfo.code}
                     </Typography>
                     <Typography variant="body2">
                       <strong>Süre sonu:</strong> {sessionInfo.expiresAt}
@@ -354,6 +354,36 @@ export const StartAttendancePage = () => {
                   <Typography variant="body2" color="text.secondary" textAlign="center">
                     Öğrenciler bu QR kodu tarayarak yoklamaya katılabilir
                   </Typography>
+                  {sessionInfo?.qrCode && (
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: 'primary.light',
+                        borderRadius: 2,
+                        textAlign: 'center',
+                        width: '100%',
+                        maxWidth: 400,
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                        Yoklama Kodu:
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        fontWeight="bold"
+                        sx={{
+                          fontFamily: 'monospace',
+                          letterSpacing: 2,
+                          color: 'primary.dark',
+                        }}
+                      >
+                        {sessionInfo.qrCode}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                        Öğrenciler bu kod ile de yoklamaya katılabilir
+                      </Typography>
+                    </Box>
+                  )}
                   <Typography variant="caption" color="text.secondary" textAlign="center">
                     Session ID: <strong>{sessionInfo?.id}</strong>
                   </Typography>
@@ -375,7 +405,7 @@ export const StartAttendancePage = () => {
                               const url = URL.createObjectURL(blob);
                               const a = document.createElement('a');
                               a.href = url;
-                              a.download = `yoklama-qr-${sessionInfo.code}.png`;
+                              a.download = `yoklama-qr-${sessionInfo.qrCode || sessionInfo.code}.png`;
                               a.click();
                               URL.revokeObjectURL(url);
                             });
