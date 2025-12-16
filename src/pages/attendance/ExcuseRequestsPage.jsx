@@ -100,10 +100,10 @@ export const ExcuseRequestsPage = () => {
   const loadSessions = async () => {
     try {
       setLoading(true);
-      const sessionList = await excuseService.getSessions(selectedSectionId, selectedDate);
+      const sessionList = await excuseService.getSessions(Number(selectedSectionId), selectedDate);
       setSessions(sessionList);
       if (sessionList.length === 1) {
-        setSelectedSessionId(sessionList[0].id);
+        setSelectedSessionId(String(sessionList[0].id));
       }
     } catch (error) {
       toast.error('Yoklama oturumları yüklenirken bir hata oluştu');
@@ -163,7 +163,7 @@ export const ExcuseRequestsPage = () => {
     try {
       setSubmitting(true);
       await excuseService.submit({
-        sessionId: selectedSessionId,
+        sessionId: Number(selectedSessionId), // Backend'e number olarak gönder
         reason: reason.trim(),
         document: document
       });
@@ -260,7 +260,7 @@ export const ExcuseRequestsPage = () => {
                   <FormControl fullWidth>
                     <InputLabel>Ders Seçin</InputLabel>
                     <Select
-                      value={selectedSectionId}
+                      value={selectedSectionId || ''}
                       label="Ders Seçin"
                       onChange={(e) => {
                         setSelectedSectionId(e.target.value);
@@ -269,11 +269,14 @@ export const ExcuseRequestsPage = () => {
                       }}
                       disabled={loading}
                     >
-                      {myCourses.map((course) => (
-                        <MenuItem key={course.enrollmentId} value={course.sectionId}>
-                          {course.course.code} - {course.course.name} (Şube {course.section.sectionNumber})
-                        </MenuItem>
-                      ))}
+                      {myCourses.map((course) => {
+                        const sectionIdValue = String(course.sectionId || course.enrollmentId); // String'e çevir
+                        return (
+                          <MenuItem key={course.enrollmentId} value={sectionIdValue}>
+                            {course.course.code} - {course.course.name} (Şube {course.section.sectionNumber})
+                          </MenuItem>
+                        );
+                      })}
                     </Select>
                   </FormControl>
 
@@ -296,13 +299,13 @@ export const ExcuseRequestsPage = () => {
                     <FormControl fullWidth>
                       <InputLabel>Yoklama Oturumu</InputLabel>
                       <Select
-                        value={selectedSessionId}
+                        value={selectedSessionId || ''}
                         label="Yoklama Oturumu"
-                        onChange={(e) => setSelectedSessionId(e.target.value)}
+                        onChange={(e) => setSelectedSessionId(String(e.target.value))}
                         disabled={loading}
                       >
                         {sessions.map((session) => (
-                          <MenuItem key={session.id} value={session.id}>
+                          <MenuItem key={session.id} value={String(session.id)}>
                             {session.startTime} - {session.endTime || 'Bitiş yok'}
                           </MenuItem>
                         ))}
