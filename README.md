@@ -1,7 +1,7 @@
 # Frontend - SmartCampus Part 1
 
 React 19 + Vite + Material-UI tabanlı modern frontend uygulaması.
-
+Canlı Uygulama v2 Linki : https://smart-campus2-frontend-production.up.railway.app/
 ## 🔧 Kullanılan Teknolojiler
 
 - **React 19** - UI framework

@@ -31,9 +31,11 @@ import SchoolIcon from '@mui/icons-material/School';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useToast } from '@/hooks/useToast';
 import { attendanceService } from '@/services/attendanceService';
 import { sectionService } from '@/services/sectionService';
+import { exportAttendanceReportToExcel } from '@/utils/excelExporter';
 
 export const AttendanceReportPage = () => {
   const toast = useToast();
@@ -111,6 +113,50 @@ export const AttendanceReportPage = () => {
     });
   };
 
+  const handleExportToExcel = async () => {
+    try {
+      if (sessions.length === 0) {
+        toast.warning('Export edilecek yoklama oturumu bulunamadı');
+        return;
+      }
+
+      // Session'ları detaylı bilgilerle yükle (eğer records yoksa)
+      const sessionsWithDetails = await Promise.all(
+        sessions.map(async (session) => {
+          // Eğer records varsa kullan, yoksa API'den çek
+          if (session.records && session.records.length > 0) {
+            return session;
+          }
+          
+          try {
+            const report = await attendanceService.sessionReport(session.id);
+            return {
+              ...session,
+              records: report.records || [],
+            };
+          } catch (err) {
+            console.error(`Session ${session.id} için rapor yüklenemedi:`, err);
+            return {
+              ...session,
+              records: [],
+            };
+          }
+        })
+      );
+
+      // Excel export
+      const filename = selectedSectionId 
+        ? `yoklama-raporu-${sections.find(s => s.id === parseInt(selectedSectionId))?.course?.code || 'ders'}`
+        : 'yoklama-raporu-tum';
+      
+      exportAttendanceReportToExcel(sessionsWithDetails, filename);
+      toast.success('Excel dosyası başarıyla indirildi');
+    } catch (err) {
+      console.error('Excel export hatası:', err);
+      toast.error(err.message || 'Excel dosyası indirilemedi');
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -175,31 +221,42 @@ export const AttendanceReportPage = () => {
         <Typography variant="h4">
           Yoklama Raporları
         </Typography>
-        <FormControl sx={{ minWidth: 250 }} size="small">
-          <InputLabel id="section-filter-label">
-            <Stack direction="row" spacing={1} alignItems="center">
-              <FilterListIcon fontSize="small" />
-              <span>Ders Filtrele</span>
-            </Stack>
-          </InputLabel>
-          <Select
-            labelId="section-filter-label"
-            value={selectedSectionId}
-            label="Ders Filtrele"
-            onChange={(e) => setSelectedSectionId(e.target.value)}
-            disabled={loadingSections}
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportToExcel}
+            disabled={sessions.length === 0}
           >
-            <MenuItem value="">
-              <em>Tüm Dersler</em>
-            </MenuItem>
-            {sections.map((section) => (
-              <MenuItem key={section.id} value={section.id}>
-                {section.course?.code || 'N/A'} - {section.course?.name || 'Bilinmeyen Ders'} 
-                {section.sectionNumber && ` (Section ${section.sectionNumber})`}
+            Excel'e Aktar
+          </Button>
+          <FormControl sx={{ minWidth: 250 }} size="small">
+            <InputLabel id="section-filter-label">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <FilterListIcon fontSize="small" />
+                <span>Ders Filtrele</span>
+              </Stack>
+            </InputLabel>
+            <Select
+              labelId="section-filter-label"
+              value={selectedSectionId}
+              label="Ders Filtrele"
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              disabled={loadingSections}
+            >
+              <MenuItem value="">
+                <em>Tüm Dersler</em>
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+              {sections.map((section) => (
+                <MenuItem key={section.id} value={section.id}>
+                  {section.course?.code || 'N/A'} - {section.course?.name || 'Bilinmeyen Ders'} 
+                  {section.sectionNumber && ` (Section ${section.sectionNumber})`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Stack>
 
       {selectedSectionId && (
