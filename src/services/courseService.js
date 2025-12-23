@@ -20,4 +20,8 @@ export const courseService = {
         const { data } = await apiClient.delete(`/courses/${courseId}`);
         return data;
     },
+    getClassrooms: async () => {
+        const { data } = await apiClient.get('/courses/classrooms');
+        return data;
+    },
 };

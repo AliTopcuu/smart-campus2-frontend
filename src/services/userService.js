@@ -23,4 +23,12 @@ export const userService = {
         const { data } = await apiClient.post(apiRoutes.users.changePassword, payload);
         return data;
     },
+    getStudents: async (params) => {
+        const { data } = await apiClient.get('/users/students', { params });
+        return data;
+    },
+    updateStudentScholarship: async (userId, hasScholarship) => {
+        const { data } = await apiClient.patch(`/users/students/${userId}/scholarship`, { hasScholarship });
+        return data;
+    },
 };

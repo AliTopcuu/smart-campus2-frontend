@@ -53,7 +53,7 @@ export const SectionManagementPage = () => {
     instructorId: '',
     capacity: '',
     scheduleItems: [], // [{ day: 'Monday', startTime: '09:00', endTime: '12:00' }, ...]
-    scheduleClassroom: '',
+    classroomId: '', // Selected classroom ID
   });
 
   // For faculty, show only their sections. For admin, show all sections
@@ -79,6 +79,12 @@ export const SectionManagementPage = () => {
   const { data: courses, isLoading: coursesLoading } = useQuery({
     queryKey: ['courses'],
     queryFn: () => courseService.list(),
+  });
+
+  // Get classrooms for selection
+  const { data: classrooms = [], isLoading: classroomsLoading } = useQuery({
+    queryKey: ['classrooms'],
+    queryFn: () => courseService.getClassrooms(),
   });
 
   // Faculty listesi için
@@ -225,7 +231,7 @@ export const SectionManagementPage = () => {
         instructorId: section.instructorId?.toString() || '',
         capacity: section.capacity?.toString() || '',
         scheduleItems,
-        scheduleClassroom: schedule.classroom || '',
+        classroomId: section.classroomId?.toString() || '',
       });
     } else {
       setEditingSection(null);
@@ -237,7 +243,7 @@ export const SectionManagementPage = () => {
         instructorId: '',
         capacity: '',
         scheduleItems: [],
-        scheduleClassroom: '',
+        classroomId: '',
       });
     }
     setOpenDialog(true);
@@ -254,7 +260,7 @@ export const SectionManagementPage = () => {
       instructorId: '',
       capacity: '',
       scheduleItems: [],
-      scheduleClassroom: '',
+      classroomId: '',
     });
   };
 
@@ -284,13 +290,11 @@ export const SectionManagementPage = () => {
   const handleSubmit = () => {
     // Build scheduleJson from form data
     const scheduleData = 
-      formData.scheduleItems.length > 0 || 
-      formData.scheduleClassroom
+      formData.scheduleItems.length > 0
         ? {
             scheduleItems: formData.scheduleItems.filter(
               item => item.day && item.startTime && item.endTime
             ),
-            classroom: formData.scheduleClassroom || undefined,
           }
         : undefined;
 
@@ -302,6 +306,7 @@ export const SectionManagementPage = () => {
       instructorId: formData.instructorId ? parseInt(formData.instructorId, 10) : undefined,
       capacity: parseInt(formData.capacity, 10),
       scheduleJson: scheduleData,
+      classroomId: formData.classroomId ? parseInt(formData.classroomId, 10) : undefined,
     };
 
     if (editingSection) {
@@ -423,7 +428,13 @@ export const SectionManagementPage = () => {
                     }
                   }
                   
-                  const classroom = schedule.classroom || 'Belirtilmemiş';
+                  // Get classroom info from association or scheduleJson
+                  let classroomDisplay = 'Belirtilmemiş';
+                  if (section.classroom) {
+                    classroomDisplay = `${section.classroom.building} ${section.classroom.roomNumber}`;
+                  } else if (schedule.classroom) {
+                    classroomDisplay = schedule.classroom;
+                  }
                   
                   return (
                     <TableRow key={section.id}>
@@ -443,7 +454,7 @@ export const SectionManagementPage = () => {
                       <TableCell>
                         <Typography variant="body2">{scheduleText}</Typography>
                       </TableCell>
-                      <TableCell>{classroom}</TableCell>
+                      <TableCell>{classroomDisplay}</TableCell>
                       <TableCell>{section.capacity}</TableCell>
                       <TableCell>{section.enrolledCount || 0}</TableCell>
                       <TableCell align="right">
@@ -636,12 +647,26 @@ export const SectionManagementPage = () => {
                   </Typography>
                 )}
                 <TextField
-                  label="Ders Yeri"
-                  value={formData.scheduleClassroom}
-                  onChange={(e) => setFormData({ ...formData, scheduleClassroom: e.target.value })}
-                  placeholder="Örn: A101, B205"
+                  select
+                  label="Ders Yeri (Derslik)"
+                  value={formData.classroomId}
+                  onChange={(e) => setFormData({ ...formData, classroomId: e.target.value })}
                   fullWidth
-                />
+                  disabled={classroomsLoading}
+                  helperText={classroomsLoading ? 'Derslikler yükleniyor...' : 'Derslik seçin (Opsiyonel)'}
+                >
+                  <MenuItem value="">Derslik Seçin (Opsiyonel)</MenuItem>
+                  {classrooms.map((classroom) => (
+                    <MenuItem key={classroom.id} value={classroom.id}>
+                      {classroom.building} {classroom.roomNumber} (Kapasite: {classroom.capacity})
+                      {classroom.featuresJson && Object.keys(classroom.featuresJson).length > 0 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          - {Object.keys(classroom.featuresJson).join(', ')}
+                        </Typography>
+                      )}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Stack>
             </Box>
           </Stack>

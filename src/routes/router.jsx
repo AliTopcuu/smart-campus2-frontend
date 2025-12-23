@@ -8,6 +8,7 @@ import {
   CourseDetailPage,
   CourseManagementPage,
   DepartmentManagementPage,
+  StudentManagementPage,
   ExcuseRequestsPage,
   ForgotPasswordPage,
   GiveAttendancePage,
@@ -25,6 +26,21 @@ import {
   SectionManagementPage,
   StartAttendancePage,
   VerifyEmailPage,
+  MealManagementPage,
+  MealReservationPage,
+  MealScannerPage,
+  WalletPage,
+  PaymentMockPage,
+  EventListPage,
+  EventDetailPage,
+  MyTicketsPage,
+  EventCheckInPage,
+  EventManagementPage,
+  ClassroomReservationPage,
+  MySchedulePage,
+  GenerateSchedulePage,
+  ClassroomManagementPage,
+  ReservationApprovalPage
 } from '@/pages';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 import { PublicRoute } from '@/components/routing/PublicRoute';
@@ -137,6 +153,70 @@ export const router = createBrowserRouter([
       {
         path: '/admin/departments',
         element: <ProtectedRoute roles={['admin']}><DepartmentManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/students',
+        element: <ProtectedRoute roles={['admin']}><StudentManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/meals',
+        element: <ProtectedRoute roles={['admin']}><MealManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/meals/scan',
+        element: <ProtectedRoute roles={['admin', 'cafeteria_staff']}><MealScannerPage /></ProtectedRoute>,
+      },
+      {
+        path: '/meals',
+        element: <ProtectedRoute roles={['student', 'faculty', 'admin']}><MealReservationPage /></ProtectedRoute>,
+      },
+      {
+        path: '/wallet',
+        element: <ProtectedRoute roles={['student', 'faculty']}><WalletPage /></ProtectedRoute>,
+      },
+      {
+        path: '/payment-mock',
+        element: <ProtectedRoute roles={['student', 'faculty']}><PaymentMockPage /></ProtectedRoute>,
+      },
+      {
+        path: '/events',
+        element: <EventListPage />,
+      },
+      {
+        path: '/events/:id',
+        element: <EventDetailPage />,
+      },
+      {
+        path: '/my-tickets',
+        element: <ProtectedRoute roles={['student', 'faculty']}><MyTicketsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/events/check-in',
+        element: <ProtectedRoute roles={['admin']}><EventCheckInPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/events',
+        element: <ProtectedRoute roles={['admin']}><EventManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/reservations',
+        element: <ClassroomReservationPage />,
+      },
+      {
+        path: '/schedule',
+        element: <MySchedulePage />,
+      },
+      {
+        path: '/admin/scheduling/generate',
+        element: <ProtectedRoute roles={['admin']}><GenerateSchedulePage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/classrooms',
+        element: <ProtectedRoute roles={['admin']}><ClassroomManagementPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/reservations',
+        element: <ProtectedRoute roles={['admin']}><ReservationApprovalPage /></ProtectedRoute>,
       },
     ],
   },

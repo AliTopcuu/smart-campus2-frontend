@@ -12,6 +12,14 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircleRounded';
 import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import GroupIcon from '@mui/icons-material/GroupRounded';
 import DoneAllIcon from '@mui/icons-material/DoneAllRounded';
+import RestaurantIcon from '@mui/icons-material/RestaurantRounded';
+import QrCodeIcon from '@mui/icons-material/QrCodeScannerRounded';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWalletRounded';
+import EventIcon from '@mui/icons-material/EventRounded';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumberRounded';
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoomRounded';
+import CalendarTodayIcon from '@mui/icons-material/CalendarTodayRounded';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesomeRounded';
 export const navItems = [
     {
         label: 'Dashboard',
@@ -27,6 +35,7 @@ export const navItems = [
         label: 'Dersler',
         path: '/courses',
         icon: SchoolIcon,
+        roles: ['student', 'faculty', 'admin'],
     },
     {
         label: 'Derslerim',
@@ -56,7 +65,7 @@ export const navItems = [
         label: 'Yoklama Başlat',
         path: '/attendance/start',
         icon: PlayCircleIcon,
-        roles: ['faculty', 'admin'],
+        roles: ['faculty'],
     },
     {
         label: 'Yoklama Durumum',
@@ -74,13 +83,13 @@ export const navItems = [
         label: 'Yoklama Raporları',
         path: '/attendance/report',
         icon: FactCheckIcon,
-        roles: ['faculty', 'admin'],
+        roles: ['faculty'],
     },
     {
         label: 'Mazeret Talepleri',
         path: '/excuse-requests',
         icon: AssignmentTurnedInIcon,
-        roles: ['student', 'faculty', 'admin'],
+        roles: ['student', 'faculty'],
     },
     {
         label: 'Ders Yönetimi',
@@ -98,6 +107,90 @@ export const navItems = [
         label: 'Bölüm Yönetimi',
         path: '/admin/departments',
         icon: SchoolIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Öğrenci Yönetimi',
+        path: '/admin/students',
+        icon: GroupIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Yemek Yönetimi',
+        path: '/admin/meals',
+        icon: RestaurantIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Yemekhane',
+        path: '/meals',
+        icon: RestaurantIcon,
+        roles: ['student', 'faculty', 'admin'],
+    },
+    {
+        label: 'Cüzdanım',
+        path: '/wallet',
+        icon: AccountBalanceWalletIcon,
+        roles: ['student', 'faculty'],
+    },
+    {
+        label: 'Yemek Teslim (QR)',
+        path: '/admin/meals/scan',
+        icon: QrCodeIcon,
+        roles: ['admin', 'cafeteria_staff'],
+    },
+    {
+        label: 'Etkinlikler',
+        path: '/events',
+        icon: EventIcon,
+        roles: ['student', 'faculty', 'admin'],
+    },
+    {
+        label: 'Etkinliklerim',
+        path: '/my-tickets',
+        icon: ConfirmationNumberIcon,
+        roles: ['student', 'faculty'],
+    },
+    {
+        label: 'Etkinlik Yönetimi',
+        path: '/admin/events',
+        icon: EventIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Etkinlik Giriş (QR)',
+        path: '/admin/events/check-in',
+        icon: QrCodeIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Derslik Rezervasyonu',
+        path: '/reservations',
+        icon: MeetingRoomIcon,
+        roles: ['student', 'faculty'],
+    },
+    {
+        label: 'Ders Programım',
+        path: '/schedule',
+        icon: CalendarTodayIcon,
+        roles: ['student', 'faculty'],
+    },
+    {
+        label: 'Derslik Yönetimi',
+        path: '/admin/classrooms',
+        icon: MeetingRoomIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Program Oluştur',
+        path: '/admin/scheduling/generate',
+        icon: AutoAwesomeIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Rezervasyon Onayları',
+        path: '/admin/reservations',
+        icon: FactCheckIcon,
         roles: ['admin'],
     },
 ];
