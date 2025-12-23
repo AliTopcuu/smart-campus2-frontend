@@ -1,7 +1,15 @@
-# Frontend - SmartCampus Part 1
+# Frontend - SmartCampus
 
 React 19 + Vite + Material-UI tabanlı modern frontend uygulaması.
-Canlı Uygulama v2 Linki : https://smart-campus2-frontend-production.up.railway.app/
+
+## 🌐 Canlı Uygulama
+
+**Canlı Uygulama:** [https://smart-campus2-frontend-production.up.railway.app/login](https://smart-campus2-frontend-production.up.railway.app/login)
+
+**Demo Giriş Bilgileri:**
+- **Admin:** `admin@smartcampus.edu` / `Password123`
+- **Öğrenci:** `student1@smartcampus.edu` / `Password123`
+- **Akademisyen:** `faculty1@smartcampus.edu` / `Password123`
 ## 🔧 Kullanılan Teknolojiler
 
 - **React 19** - UI framework
@@ -134,6 +142,8 @@ frontend1/
 - **Verify Email** - Email doğrulama
 
 ### Protected Sayfalar
+
+#### Part 1-2 Özellikleri
 - **Dashboard** - Ana sayfa
 - **Profile** - Profil yönetimi
 - **Courses** - Ders listesi
@@ -144,6 +154,16 @@ frontend1/
 - **My Attendance** - Yoklama durumu (öğrenci)
 - **Attendance Report** - Yoklama raporları (akademisyen/admin)
 - **Excuse Requests** - Mazeret talepleri
+
+#### Part 3 Özellikleri
+- **Meal Service** - Yemek rezervasyonu ve menü görüntüleme
+- **Wallet** - Cüzdan yönetimi ve para yükleme
+- **Events** - Etkinlik listesi ve kayıt
+- **My Events** - Kayıtlı etkinlikler
+- **Schedule** - Ders programı görüntüleme (öğrenci/akademisyen)
+- **Generate Schedule** - Otomatik program oluşturma (admin)
+- **QR Scanner** - QR kod okutma (yemek/etkinlik)
+- **Classroom Reservations** - Sınıf rezervasyonu
 
 ## 🔄 State Management
 
@@ -176,6 +196,10 @@ frontend1/
 - `gradeService.js` - Grade işlemleri
 - `attendanceService.js` - Attendance işlemleri
 - `excuseService.js` - Excuse işlemleri
+- `mealService.js` - Meal reservation işlemleri (Part 3)
+- `walletService.js` - Wallet ve payment işlemleri (Part 3)
+- `eventService.js` - Event management işlemleri (Part 3)
+- `schedulingService.js` - Schedule generation işlemleri (Part 3)
 
 ## ✅ Form Validasyonu
 
@@ -185,6 +209,7 @@ frontend1/
 
 ## 🎯 Özellikler
 
+### Part 1-2
 - ✅ Modern, responsive UI
 - ✅ Dark/Light mode
 - ✅ JWT authentication
@@ -197,10 +222,27 @@ frontend1/
 - ✅ Protected routes
 - ✅ Role-based access control
 
+### Part 3
+- ✅ Meal reservation system
+- ✅ Wallet and payment integration
+- ✅ Event management and registration
+- ✅ QR code scanning (meals and events)
+- ✅ Automatic schedule generation (CSP algorithm)
+- ✅ Classroom reservation system
+- ✅ Real-time balance updates
+- ✅ Transaction history
+
 ## 📚 Dokümantasyon
 
-- **Kullanıcı Kılavuzu:** [USER_MANUAL_PART1.md](./USER_MANUAL_PART1.md)
-- **API Dokümantasyonu:** [../backend/API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md)
+### Backend Dokümantasyonu
+- **API Dokümantasyonu (Part 1-2):** [../backend/API_DOCUMENTATION.md](../backend/API_DOCUMENTATION.md)
+- **API Dokümantasyonu (Part 3):** [../backend/docs/API_DOCUMENTATION_PART3.md](../backend/docs/API_DOCUMENTATION_PART3.md)
+- **Payment Integration Guide:** [../backend/docs/PAYMENT_INTEGRATION_GUIDE.md](../backend/docs/PAYMENT_INTEGRATION_GUIDE.md)
+- **Scheduling Algorithm:** [../backend/docs/SCHEDULING_ALGORITHM.md](../backend/docs/SCHEDULING_ALGORITHM.md)
+- **Database Schema Updates:** [../backend/docs/DATABASE_SCHEMA_UPDATE.md](../backend/docs/DATABASE_SCHEMA_UPDATE.md)
+
+### Kullanıcı Kılavuzları
+- **User Manual (Part 3):** [../backend/docs/USER_MANUAL_PART3.md](../backend/docs/USER_MANUAL_PART3.md)
 
 ## 🐛 Hata Ayıklama
 
