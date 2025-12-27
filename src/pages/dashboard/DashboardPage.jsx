@@ -248,3 +248,4 @@ const TodaysClassesWidget = ({ sections }) => {
       </CardContent>
     </Card>
   );
+};
