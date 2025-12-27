@@ -7,6 +7,7 @@ import { getTheme } from '@/theme';
 import { router } from '@/routes/router';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider, useThemeMode } from '@/context/ThemeContext';
+import { SocketProvider } from '@/context/SocketContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,8 +27,10 @@ const AppContent = () => {
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
-          <ToastContainer position="top-right" autoClose={4000} pauseOnHover />
+          <SocketProvider>
+            <RouterProvider router={router} />
+            <ToastContainer position="top-right" autoClose={4000} pauseOnHover />
+          </SocketProvider>
         </AuthProvider>
       </QueryClientProvider>
     </MuiThemeProvider>
@@ -43,4 +46,3 @@ function App() {
 }
 
 export default App;
-
