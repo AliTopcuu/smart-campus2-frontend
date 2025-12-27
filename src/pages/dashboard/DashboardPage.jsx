@@ -285,14 +285,14 @@ const StudentStatsWidget = () => {
   // Fetch GPA and Credits
   const { data: gradesData } = useQuery({
     queryKey: ['dashboard-student-grades'],
-    queryFn: () => gradeService.myGrades(null, {}),
+    queryFn: () => gradeService.myGrades({}),
     staleTime: 10 * 60 * 1000,
   });
 
   // Fetch Attendance
   const { data: attendanceData } = useQuery({
     queryKey: ['dashboard-student-attendance'],
-    queryFn: () => attendanceService.getMyAttendanceByCourse(),
+    queryFn: () => attendanceService.myAttendanceByCourse(),
     staleTime: 5 * 60 * 1000,
   });
 
