@@ -50,7 +50,7 @@ export const MyAttendancePage = () => {
       const errorMessage = err?.response?.data?.message || err?.message || 'Yoklama kayıtları yüklenemedi';
       setError(errorMessage);
       toast.error(errorMessage);
-      
+
       // 401 hatası durumunda kullanıcıyı bilgilendir
       if (err?.response?.status === 401) {
         toast.error('Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
@@ -139,7 +139,7 @@ export const MyAttendancePage = () => {
       <Stack spacing={2}>
         {courses.map((course) => (
           <Card key={course.sectionId} elevation={2}>
-            <Accordion 
+            <Accordion
               expanded={expandedCourse === course.sectionId}
               onChange={handleAccordionChange(course.sectionId)}
             >
@@ -148,7 +148,7 @@ export const MyAttendancePage = () => {
                   <SchoolIcon color="primary" sx={{ fontSize: 32 }} />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" fontWeight="bold">
-                      {course.course.code} - {course.course.name}
+                      {course.course?.code || 'N/A'} - {course.course?.name || 'Bilinmiyor'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Section {course.sectionNumber}
@@ -207,16 +207,16 @@ export const MyAttendancePage = () => {
                           <TableCell>
                             <Chip
                               label={
-                                session.status === 'active' ? 'Aktif' : 
-                                session.status === 'closed' ? 'Kapalı' : 
-                                session.status === 'pending' ? 'Bekliyor' : 
-                                session.status
+                                session.status === 'active' ? 'Aktif' :
+                                  session.status === 'closed' ? 'Kapalı' :
+                                    session.status === 'pending' ? 'Bekliyor' :
+                                      session.status
                               }
                               color={
-                                session.status === 'active' ? 'success' : 
-                                session.status === 'closed' ? 'default' : 
-                                session.status === 'pending' ? 'warning' : 
-                                'default'
+                                session.status === 'active' ? 'success' :
+                                  session.status === 'closed' ? 'default' :
+                                    session.status === 'pending' ? 'warning' :
+                                      'default'
                               }
                               size="small"
                             />

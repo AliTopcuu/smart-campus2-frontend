@@ -86,7 +86,7 @@ export const MyCoursesPage = () => {
 
   // Ensure data is an array
   const courses = Array.isArray(data) ? data : [];
-  
+
   // Debug: Log the data we received
   console.log('MyCoursesPage - Received data:', {
     data,
@@ -128,7 +128,7 @@ export const MyCoursesPage = () => {
                 // Parse schedule information - support both new and old format
                 // Handle case where scheduleJson might be a string (from Sequelize JSONB)
                 let schedule = enrollment.section?.scheduleJson;
-                
+
                 // Debug log - always log to see what we're getting
                 console.log('MyCoursesPage - Enrollment schedule data:', {
                   enrollmentId: enrollment.enrollmentId,
@@ -139,22 +139,22 @@ export const MyCoursesPage = () => {
                   sectionScheduleJson: enrollment.section?.scheduleJson,
                   fullEnrollment: enrollment
                 });
-                
+
                 // If scheduleJson is null/undefined, try to get it from section object directly
                 if (!schedule && enrollment.section) {
                   // Try different possible property names
-                  schedule = enrollment.section.scheduleJson || 
-                            enrollment.section.schedule || 
-                            null;
+                  schedule = enrollment.section.scheduleJson ||
+                    enrollment.section.schedule ||
+                    null;
                   console.log('Tried alternative access methods, schedule:', schedule);
                 }
-                
+
                 // If still null, check if it's in the root enrollment object (backend might return it there)
                 if (!schedule && enrollment.scheduleJson) {
                   schedule = enrollment.scheduleJson;
                   console.log('Found scheduleJson in root enrollment object:', schedule);
                 }
-                
+
                 if (typeof schedule === 'string') {
                   try {
                     schedule = JSON.parse(schedule);
@@ -164,11 +164,11 @@ export const MyCoursesPage = () => {
                     schedule = null;
                   }
                 }
-                
+
                 // If schedule is still null/undefined, set to empty object
                 schedule = schedule || {};
                 console.log('Final schedule object:', schedule, 'has scheduleItems:', Array.isArray(schedule.scheduleItems));
-                
+
                 const dayLabels = {
                   Monday: 'Pazartesi',
                   Tuesday: 'Salı',
@@ -176,40 +176,40 @@ export const MyCoursesPage = () => {
                   Thursday: 'Perşembe',
                   Friday: 'Cuma',
                 };
-                
+
                 let days = 'Belirtilmemiş';
                 let time = '';
-                
+
                 // New format: scheduleItems array
                 if (Array.isArray(schedule.scheduleItems) && schedule.scheduleItems.length > 0) {
                   const scheduleTexts = schedule.scheduleItems.map(item => {
                     const dayLabel = dayLabels[item.day] || item.day;
-                    const timeStr = item.startTime && item.endTime 
-                      ? ` (${item.startTime}-${item.endTime})` 
+                    const timeStr = item.startTime && item.endTime
+                      ? ` (${item.startTime}-${item.endTime})`
                       : '';
                     return `${dayLabel}${timeStr}`;
                   });
                   days = scheduleTexts.join(', ');
-                } 
+                }
                 // Old format: days array + single startTime/endTime
                 else if (Array.isArray(schedule.days) && schedule.days.length > 0) {
                   days = schedule.days.map(day => dayLabels[day] || day).join(', ');
                   if (schedule.startTime && schedule.endTime) {
                     time = `${schedule.startTime} - ${schedule.endTime}`;
                   }
-                } 
+                }
                 // Fallback to scheduleText
                 else if (enrollment.section?.scheduleText && enrollment.section.scheduleText !== 'TBA') {
                   days = enrollment.section.scheduleText;
                 }
-                
+
                 const classroom = schedule.classroom || 'Belirtilmemiş';
-                
+
                 return (
                   <TableRow key={enrollment.enrollmentId}>
                     <TableCell>
-                      <Typography fontWeight={600}>{enrollment.course.code}</Typography>
-                      <Typography color="text.secondary">{enrollment.course.name}</Typography>
+                      <Typography fontWeight={600}>{enrollment.course?.code || 'N/A'}</Typography>
+                      <Typography color="text.secondary">{enrollment.course?.name || 'Bilinmiyor'}</Typography>
                     </TableCell>
                     <TableCell>{enrollment.section.sectionNumber}</TableCell>
                     <TableCell>{enrollment.section.instructor}</TableCell>
@@ -257,7 +257,7 @@ export const MyCoursesPage = () => {
             <DialogContent>
               <DialogContentText>
                 {selectedEnrollment
-                  ? `${selectedEnrollment.course.code} ${selectedEnrollment.course.name} dersinden ayrılmak üzeresiniz.`
+                  ? `${selectedEnrollment.course?.code || ''} ${selectedEnrollment.course?.name || ''} dersinden ayrılmak üzeresiniz.`
                   : 'Ders seçilmedi.'}
               </DialogContentText>
             </DialogContent>

@@ -59,7 +59,7 @@ export const GradesPage = () => {
   const handleDownloadTranscript = async () => {
     try {
       setIsDownloading(true);
-      
+
       // Fetch transcript data
       let transcript;
       try {
@@ -75,22 +75,22 @@ export const GradesPage = () => {
         }
         throw transcriptError;
       }
-      
+
       if (!transcript || !Array.isArray(transcript) || transcript.length === 0) {
         toast.info('Transkript için henüz tamamlanmış ders bulunmuyor.');
         setIsDownloading(false);
         return;
       }
-      
+
       // Fetch CGPA separately without filters (to get true cumulative GPA)
       let safeCgpaForPdf = null;
       try {
         const allGradesResponse = await gradeService.myGrades({}); // No filters
-        safeCgpaForPdf = (allGradesResponse?.cgpa !== undefined && 
-                          allGradesResponse?.cgpa !== null && 
-                          !isNaN(allGradesResponse?.cgpa)) 
-                          ? allGradesResponse.cgpa 
-                          : null;
+        safeCgpaForPdf = (allGradesResponse?.cgpa !== undefined &&
+          allGradesResponse?.cgpa !== null &&
+          !isNaN(allGradesResponse?.cgpa))
+          ? allGradesResponse.cgpa
+          : null;
         console.log('CGPA for PDF:', safeCgpaForPdf);
       } catch (cgpaError) {
         console.warn('Could not fetch CGPA for PDF:', cgpaError);
@@ -98,7 +98,7 @@ export const GradesPage = () => {
         const { cgpa } = allGradesData || {};
         safeCgpaForPdf = (cgpa !== undefined && cgpa !== null && !isNaN(cgpa)) ? cgpa : null;
       }
-      
+
       // Ensure gradePoint is calculated for each course in transcript
       const transcriptWithGradePoints = transcript.map(course => {
         if (!course) return course;
@@ -110,7 +110,7 @@ export const GradesPage = () => {
             gradePoint = null;
           }
         }
-        
+
         // If gradePoint is null but letterGrade exists, calculate it
         if ((gradePoint === null || gradePoint === undefined) && course.letterGrade) {
           // Calculate grade point from letter grade
@@ -121,7 +121,7 @@ export const GradesPage = () => {
           const normalizedGrade = String(course.letterGrade).trim().toUpperCase();
           gradePoint = gradePoints[normalizedGrade] !== undefined ? gradePoints[normalizedGrade] : 0.0;
         }
-        
+
         // Ensure gradePoint is a number
         if (gradePoint !== null && gradePoint !== undefined) {
           gradePoint = parseFloat(gradePoint);
@@ -129,7 +129,7 @@ export const GradesPage = () => {
             gradePoint = 0.0;
           }
         }
-        
+
         return {
           ...course,
           gradePoint: gradePoint
@@ -141,7 +141,7 @@ export const GradesPage = () => {
       if (!jsPDF) {
         throw new Error('PDF kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.');
       }
-      
+
       let doc;
       try {
         // jspdf 3.x uses named export
@@ -167,16 +167,16 @@ export const GradesPage = () => {
           throw new Error(`PDF oluşturulamadı: ${altError?.message || pdfError?.message || 'Bilinmeyen hata'}`);
         }
       }
-      
+
       // Check if doc.internal exists (jspdf 3.x compatibility)
       if (!doc) {
         throw new Error('PDF dokümanı oluşturulamadı. Lütfen sayfayı yenileyin.');
       }
-      
+
       if (!doc.internal) {
         console.warn('doc.internal is missing, but continuing...');
       }
-      
+
       // Get page dimensions safely
       let pageWidth, pageHeight;
       try {
@@ -249,16 +249,16 @@ export const GradesPage = () => {
       const tableHeaders = ['Ders Kodu', 'Ders Adi', 'Kredi', 'Vize', 'Final', 'Harf', 'Puan'];
       const colWidths = [28, 70, 12, 15, 15, 12, 15];
       let xPos = 20;
-      
+
       // Draw table header background
       doc.setFillColor(230, 230, 230);
       doc.rect(20, yPos - 6, pageWidth - 40, 8, 'F');
-      
+
       // Draw header border
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.3);
       doc.rect(20, yPos - 6, pageWidth - 40, 8);
-      
+
       tableHeaders.forEach((header, index) => {
         addText(header, xPos + 2, yPos);
         xPos += colWidths[index];
@@ -268,7 +268,7 @@ export const GradesPage = () => {
       // Table Data
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      
+
       // Group by semester/year
       const groupedBySemester = {};
       transcriptWithGradePoints.forEach((course) => {
@@ -282,7 +282,7 @@ export const GradesPage = () => {
 
       // Sort semesters
       const sortedSemesters = Object.keys(groupedBySemester).sort().reverse();
-      
+
       // If no semesters, show all courses without grouping
       if (sortedSemesters.length === 0) {
         sortedSemesters.push('All');
@@ -292,7 +292,7 @@ export const GradesPage = () => {
       sortedSemesters.forEach((semesterKey) => {
         const courses = groupedBySemester[semesterKey];
         if (!courses || courses.length === 0) return;
-        
+
         // Check if we need a new page
         if (yPos > pageHeight - 30) {
           doc.addPage();
@@ -310,7 +310,7 @@ export const GradesPage = () => {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        
+
         courses.forEach((course, courseIndex) => {
           // Check if we need a new page
           if (yPos > pageHeight - 25) {
@@ -340,10 +340,10 @@ export const GradesPage = () => {
             course.midtermGrade !== null && course.midtermGrade !== undefined ? parseFloat(course.midtermGrade).toFixed(2) : '-',
             course.finalGrade !== null && course.finalGrade !== undefined ? parseFloat(course.finalGrade).toFixed(2) : '-',
             course.letterGrade || '-',
-            course.gradePoint !== null && course.gradePoint !== undefined && !isNaN(course.gradePoint) 
-              ? (typeof course.gradePoint === 'number' 
-                  ? course.gradePoint.toFixed(2)
-                  : parseFloat(course.gradePoint || 0).toFixed(2))
+            course.gradePoint !== null && course.gradePoint !== undefined && !isNaN(course.gradePoint)
+              ? (typeof course.gradePoint === 'number'
+                ? course.gradePoint.toFixed(2)
+                : parseFloat(course.gradePoint || 0).toFixed(2))
               : '-'
           ];
 
@@ -361,15 +361,15 @@ export const GradesPage = () => {
             }
             xPos += colWidths[index];
           });
-          
+
           // Draw row border AFTER text (below the row)
           doc.setDrawColor(200, 200, 200);
           doc.setLineWidth(0.1);
           doc.line(20, yPos + 2, pageWidth - 20, yPos + 2);
-          
+
           yPos += 7;
         });
-        
+
         yPos += 5; // Space between semesters
       });
 
@@ -430,9 +430,9 @@ export const GradesPage = () => {
         status: error?.response?.status,
         data: error?.response?.data
       });
-      
+
       let errorMessage = 'Transkript indirilirken hata oluştu';
-      
+
       // Handle specific error cases
       if (error?.response?.status === 401) {
         errorMessage = 'Oturum süreniz dolmuş. Lütfen sayfayı yenileyip tekrar deneyin.';
@@ -456,7 +456,7 @@ export const GradesPage = () => {
       } else {
         toast.error(`PDF indirme hatası: ${errorMessage}`);
       }
-      
+
       console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     } finally {
       setIsDownloading(false);
@@ -486,17 +486,17 @@ export const GradesPage = () => {
 
   // Ensure data exists and has expected structure
   const { grades = [], gpa, gpaTrend } = data || {};
-  
+
   // IMPORTANT: CGPA should always come from allGradesData (all semesters, no filters)
   // This ensures CGPA doesn't change when filters are applied
   const cgpaFromAll = allGradesData?.cgpa;
   const cgpa = cgpaFromAll !== undefined ? cgpaFromAll : (data?.cgpa);
-  
+
   // Safety check - ensure all values are valid
   const safeGpa = (gpa !== undefined && gpa !== null && !isNaN(gpa)) ? gpa : null;
   const safeCgpa = (cgpa !== undefined && cgpa !== null && !isNaN(cgpa)) ? cgpa : null;
   const safeGpaTrend = (gpaTrend !== undefined && gpaTrend !== null && !isNaN(gpaTrend)) ? gpaTrend : null;
-  
+
   // Get unique years and semesters from all grades (for filter options)
   const allGrades = allGradesData?.grades || [];
   const allYears = [...new Set(allGrades.map(g => g.year).filter(Boolean))].sort((a, b) => b - a);
@@ -637,8 +637,8 @@ export const GradesPage = () => {
               <TableBody>
                 {grades.map((grade) => (
                   <TableRow key={grade.enrollmentId || grade.id}>
-                    <TableCell>{grade.courseCode || grade.code}</TableCell>
-                    <TableCell>{grade.courseName || grade.name}</TableCell>
+                    <TableCell>{grade?.courseCode || grade?.code || 'N/A'}</TableCell>
+                    <TableCell>{grade?.courseName || grade?.name || 'N/A'}</TableCell>
                     <TableCell align="center">
                       {grade.credits !== undefined && grade.credits !== null
                         ? grade.credits
@@ -659,9 +659,9 @@ export const GradesPage = () => {
                     </TableCell>
                     <TableCell align="center">
                       {grade.gradePoint !== undefined && grade.gradePoint !== null
-                        ? (typeof grade.gradePoint === 'number' 
-                            ? grade.gradePoint.toFixed(2)
-                            : parseFloat(grade.gradePoint || 0).toFixed(2))
+                        ? (typeof grade.gradePoint === 'number'
+                          ? grade.gradePoint.toFixed(2)
+                          : parseFloat(grade.gradePoint || 0).toFixed(2))
                         : '-'}
                     </TableCell>
                   </TableRow>
