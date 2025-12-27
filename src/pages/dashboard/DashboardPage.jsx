@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { WeeklyScheduleCalendar } from '@/components/schedule/WeeklyScheduleCalendar';
 import { enrollmentService } from '@/services/enrollmentService';
 import { sectionService } from '@/services/sectionService';
+import { schedulingService } from '@/services/schedulingService';
 import { AdminDashboardPage } from '@/pages/admin/analytics/AdminDashboardPage';
 
 const overviewCards = [
@@ -24,50 +25,48 @@ export const DashboardPage = () => {
     return <AdminDashboardPage />;
   }
 
-  // Fetch courses for students
-  const { data: studentCourses, isLoading: isLoadingStudentCourses, isError: isErrorStudentCourses } = useQuery({
-    queryKey: ['dashboard-student-courses'],
-    queryFn: () => enrollmentService.myCourses(),
-    enabled: isStudent,
-    staleTime: 0,
+  // Determine current semester and year
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const currentSemester = currentMonth >= 8 ? 'Fall' : 'Spring';
+
+  // Fetch schedule for both students and faculty
+  const { data: scheduleData, isLoading: isLoadingSchedule, isError: isErrorSchedule } = useQuery({
+    queryKey: ['dashboard-schedule', currentSemester, currentYear],
+    queryFn: () => schedulingService.getMySchedule(currentSemester, currentYear),
+    enabled: (isStudent || isFaculty),
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
-  // Fetch sections for faculty
-  const { data: facultySections, isLoading: isLoadingFacultySections, isError: isErrorFacultySections } = useQuery({
-    queryKey: ['dashboard-faculty-sections'],
-    queryFn: () => sectionService.mySections(),
-    enabled: isFaculty,
-    staleTime: 0,
-  });
-
-  // Prepare sections data for calendar
+  // Prepare sections data for calendar from schedulingService format
   const getSectionsForCalendar = () => {
-    if (isStudent && studentCourses) {
-      // For students, extract sections from enrollments
-      return studentCourses.map((enrollment) => ({
-        id: enrollment.section?.id || enrollment.sectionId,
-        sectionNumber: enrollment.section?.sectionNumber,
-        scheduleJson: enrollment.section?.scheduleJson,
-        course: enrollment.course,
-        classroom: enrollment.section?.classroom,
-      })).filter((section) => section.id); // Filter out invalid sections
-    }
-    if (isFaculty && facultySections) {
-      // For faculty, use sections directly
-      return facultySections.map((section) => ({
-        id: section.id,
-        sectionNumber: section.sectionNumber,
-        scheduleJson: section.scheduleJson,
-        course: section.course,
-        classroom: section.classroom,
-      }));
-    }
-    return [];
+    if (!scheduleData || Object.keys(scheduleData).length === 0) return [];
+
+    // Transform { monday: [items], tuesday: [items] } to array of sections for Calendar
+    return Object.entries(scheduleData).flatMap(([day, items]) =>
+      items.map(item => ({
+        id: item.sectionId,
+        courseCode: item.courseCode,
+        courseName: item.courseName,
+        sectionNumber: item.sectionNumber,
+        scheduleJson: {
+          scheduleItems: [{
+            day: day.charAt(0).toUpperCase() + day.slice(1), // monday -> Monday
+            startTime: item.startTime,
+            endTime: item.endTime,
+            classroomId: null
+          }]
+        },
+        classroom: item.classroom ? {
+          building: item.classroom.split(' ')[0],
+          roomNumber: item.classroom.split(' ').slice(1).join(' ')
+        } : null,
+        course: { code: item.courseCode, name: item.courseName }
+      }))
+    );
   };
 
   const sections = getSectionsForCalendar();
-  const isLoadingSchedule = (isStudent && isLoadingStudentCourses) || (isFaculty && isLoadingFacultySections);
-  const isErrorSchedule = (isStudent && isErrorStudentCourses) || (isFaculty && isErrorFacultySections);
 
   return (
     <Box>
