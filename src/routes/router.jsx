@@ -40,7 +40,12 @@ import {
   MySchedulePage,
   GenerateSchedulePage,
   ClassroomManagementPage,
-  ReservationApprovalPage
+  ReservationApprovalPage,
+  AdminDashboardPage,
+  AcademicPerformancePage,
+  AttendanceAnalyticsPage,
+  MealAnalyticsPage,
+  EventAnalyticsPage
 } from '@/pages';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
 import { PublicRoute } from '@/components/routing/PublicRoute';
@@ -217,6 +222,26 @@ export const router = createBrowserRouter([
       {
         path: '/admin/reservations',
         element: <ProtectedRoute roles={['admin']}><ReservationApprovalPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/dashboard',
+        element: <ProtectedRoute roles={['admin']}><AdminDashboardPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/analytics/academic',
+        element: <ProtectedRoute roles={['admin']}><AcademicPerformancePage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/analytics/attendance',
+        element: <ProtectedRoute roles={['admin']}><AttendanceAnalyticsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/analytics/meal',
+        element: <ProtectedRoute roles={['admin']}><MealAnalyticsPage /></ProtectedRoute>,
+      },
+      {
+        path: '/admin/analytics/events',
+        element: <ProtectedRoute roles={['admin']}><EventAnalyticsPage /></ProtectedRoute>,
       },
     ],
   },

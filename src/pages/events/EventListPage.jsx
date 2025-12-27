@@ -31,7 +31,7 @@ export const EventListPage = () => {
   const searchQuery = searchParams.get('search') ?? '';
   const statusQuery = searchParams.get('status') ?? '';
   const dateFilterQuery = searchParams.get('dateFilter') ?? '';
-  
+
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [localStatus, setLocalStatus] = useState(statusQuery);
   const [localDateFilter, setLocalDateFilter] = useState(dateFilterQuery);
@@ -110,8 +110,28 @@ export const EventListPage = () => {
           const capacityPercentage = getCapacityPercentage(event.currentParticipants, event.capacity);
           const capacityColor = getCapacityColor(capacityPercentage);
           const eventDate = new Date(event.date);
-          const isPast = eventDate < new Date();
           const isFull = event.currentParticipants >= event.capacity;
+
+          // computedStatus veya manuel hesaplama
+          const getEventStatus = () => {
+            if (event.computedStatus) return event.computedStatus;
+            if (event.status === 'cancelled') return 'cancelled';
+            const now = new Date();
+            if (event.endDate && new Date(event.endDate) < now) return 'completed';
+            if (new Date(event.date) > now) return 'upcoming';
+            return 'active';
+          };
+
+          const eventStatus = getEventStatus();
+
+          const statusConfig = {
+            upcoming: { label: 'Yaklaşan', color: 'info' },
+            active: { label: 'Aktif', color: 'success' },
+            completed: { label: 'Bitti', color: 'default' },
+            cancelled: { label: 'İptal', color: 'error' }
+          };
+
+          const currentStatus = statusConfig[eventStatus] || statusConfig.active;
 
           return (
             <Grid item xs={12} md={6} lg={4} key={event.id}>
@@ -119,19 +139,19 @@ export const EventListPage = () => {
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="baseline" mb={1}>
                     <Chip
-                      label={event.status === 'active' ? 'Aktif' : event.status === 'cancelled' ? 'İptal' : 'Tamamlandı'}
-                      color={event.status === 'active' ? 'primary' : event.status === 'cancelled' ? 'error' : 'default'}
+                      label={currentStatus.label}
+                      color={currentStatus.color}
                       size="small"
                     />
-                    {isPast && (
-                      <Chip label="Geçmiş" color="default" size="small" />
+                    {isFull && eventStatus !== 'completed' && (
+                      <Chip label="Dolu" color="warning" size="small" variant="outlined" />
                     )}
                   </Stack>
-                  
+
                   <Typography variant="h6" mt={1} mb={1}>
                     {event.title}
                   </Typography>
-                  
+
                   <Stack spacing={1} mb={2}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <EventIcon fontSize="small" color="action" />

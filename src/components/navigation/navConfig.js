@@ -20,6 +20,9 @@ import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumberRounde
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoomRounded';
 import CalendarTodayIcon from '@mui/icons-material/CalendarTodayRounded';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesomeRounded';
+import AnalyticsIcon from '@mui/icons-material/AnalyticsRounded';
+import TrendingUpIcon from '@mui/icons-material/TrendingUpRounded';
+import AssessmentIcon from '@mui/icons-material/AssessmentRounded';
 export const navItems = [
     {
         label: 'Dashboard',
@@ -116,6 +119,24 @@ export const navItems = [
         roles: ['admin'],
     },
     {
+        label: 'Derslik Yönetimi',
+        path: '/admin/classrooms',
+        icon: MeetingRoomIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Program Oluştur',
+        path: '/admin/scheduling/generate',
+        icon: AutoAwesomeIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Rezervasyon Onayları',
+        path: '/admin/reservations',
+        icon: FactCheckIcon,
+        roles: ['admin'],
+    },
+    {
         label: 'Yemek Yönetimi',
         path: '/admin/meals',
         icon: RestaurantIcon,
@@ -176,21 +197,27 @@ export const navItems = [
         roles: ['student', 'faculty'],
     },
     {
-        label: 'Derslik Yönetimi',
-        path: '/admin/classrooms',
-        icon: MeetingRoomIcon,
+        label: 'Akademik Analiz',
+        path: '/admin/analytics/academic',
+        icon: TrendingUpIcon,
         roles: ['admin'],
     },
     {
-        label: 'Program Oluştur',
-        path: '/admin/scheduling/generate',
-        icon: AutoAwesomeIcon,
+        label: 'Yoklama Analizi',
+        path: '/admin/analytics/attendance',
+        icon: AssessmentIcon,
         roles: ['admin'],
     },
     {
-        label: 'Rezervasyon Onayları',
-        path: '/admin/reservations',
-        icon: FactCheckIcon,
+        label: 'Yemek Analizi',
+        path: '/admin/analytics/meal',
+        icon: RestaurantIcon,
+        roles: ['admin'],
+    },
+    {
+        label: 'Etkinlik Analizi',
+        path: '/admin/analytics/events',
+        icon: EventIcon,
         roles: ['admin'],
     },
 ];

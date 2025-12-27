@@ -40,12 +40,25 @@ export const EventManagementPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    category: '',
     date: '',
+    endDate: '',
     location: '',
     capacity: '',
     status: 'active',
     surveySchema: null,
   });
+
+  const categoryOptions = [
+    { value: 'academic', label: 'Akademik' },
+    { value: 'social', label: 'Sosyal' },
+    { value: 'sports', label: 'Spor' },
+    { value: 'cultural', label: 'Kültürel' },
+    { value: 'career', label: 'Kariyer' },
+    { value: 'workshop', label: 'Workshop' },
+    { value: 'seminar', label: 'Seminer' },
+    { value: 'conference', label: 'Konferans' },
+  ];
 
   const { data: events = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-events'],
@@ -99,10 +112,13 @@ export const EventManagementPage = () => {
       // Format date for input (YYYY-MM-DDTHH:mm)
       const eventDate = new Date(event.date);
       const formattedDate = eventDate.toISOString().slice(0, 16);
+      const formattedEndDate = event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '';
       setFormData({
         title: event.title || '',
         description: event.description || '',
+        category: event.category || '',
         date: formattedDate,
+        endDate: formattedEndDate,
         location: event.location || '',
         capacity: event.capacity?.toString() || '',
         status: event.status || 'active',
@@ -113,7 +129,9 @@ export const EventManagementPage = () => {
       setFormData({
         title: '',
         description: '',
+        category: '',
         date: '',
+        endDate: '',
         location: '',
         capacity: '',
         status: 'active',
@@ -129,7 +147,9 @@ export const EventManagementPage = () => {
     setFormData({
       title: '',
       description: '',
+      category: '',
       date: '',
+      endDate: '',
       location: '',
       capacity: '',
       status: 'active',
@@ -141,7 +161,9 @@ export const EventManagementPage = () => {
     const payload = {
       title: formData.title,
       description: formData.description || null,
+      category: formData.category || null,
       date: formData.date,
+      endDate: formData.endDate || null,
       location: formData.location,
       capacity: parseInt(formData.capacity, 10),
       status: formData.status,
@@ -213,6 +235,7 @@ export const EventManagementPage = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Başlık</TableCell>
+                  <TableCell>Kategori</TableCell>
                   <TableCell>Tarih</TableCell>
                   <TableCell>Konum</TableCell>
                   <TableCell align="center">Kapasite</TableCell>
@@ -239,6 +262,18 @@ export const EventManagementPage = () => {
                               ? `${event.description.substring(0, 50)}...`
                               : event.description}
                           </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {event.category ? (
+                          <Chip
+                            label={categoryOptions.find(c => c.value === event.category)?.label || event.category}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                          />
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">-</Typography>
                         )}
                       </TableCell>
                       <TableCell>
@@ -273,18 +308,22 @@ export const EventManagementPage = () => {
                       <TableCell>
                         <Chip
                           label={
-                            event.status === 'active'
-                              ? 'Aktif'
-                              : event.status === 'cancelled'
-                              ? 'İptal'
-                              : 'Tamamlandı'
+                            (event.computedStatus || event.status) === 'upcoming'
+                              ? 'Yaklaşan'
+                              : (event.computedStatus || event.status) === 'active'
+                                ? 'Aktif'
+                                : (event.computedStatus || event.status) === 'cancelled'
+                                  ? 'İptal'
+                                  : 'Tamamlandı'
                           }
                           color={
-                            event.status === 'active'
-                              ? 'primary'
-                              : event.status === 'cancelled'
-                              ? 'error'
-                              : 'default'
+                            (event.computedStatus || event.status) === 'upcoming'
+                              ? 'info'
+                              : (event.computedStatus || event.status) === 'active'
+                                ? 'success'
+                                : (event.computedStatus || event.status) === 'cancelled'
+                                  ? 'error'
+                                  : 'default'
                           }
                           size="small"
                         />
@@ -338,13 +377,37 @@ export const EventManagementPage = () => {
               rows={3}
             />
             <TextField
-              label="Tarih ve Saat"
+              select
+              label="Kategori"
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              fullWidth
+              required
+            >
+              {categoryOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Başlangıç Tarihi"
               type="datetime-local"
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               fullWidth
               required
               InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Bitiş Tarihi"
+              type="datetime-local"
+              value={formData.endDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: formData.date }}
             />
             <TextField
               label="Konum"
@@ -384,7 +447,9 @@ export const EventManagementPage = () => {
             onClick={handleSubmit}
             disabled={
               !formData.title ||
+              !formData.category ||
               !formData.date ||
+              !formData.endDate ||
               !formData.location ||
               !formData.capacity ||
               createMutation.isPending ||
@@ -394,8 +459,8 @@ export const EventManagementPage = () => {
             {createMutation.isPending || updateMutation.isPending
               ? 'Kaydediliyor...'
               : editingEvent
-              ? 'Güncelle'
-              : 'Oluştur'}
+                ? 'Güncelle'
+                : 'Oluştur'}
           </Button>
         </DialogActions>
       </Dialog>

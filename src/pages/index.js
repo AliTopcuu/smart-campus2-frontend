@@ -39,3 +39,5 @@ export { MySchedulePage } from './schedule/MySchedulePage';
 export { GenerateSchedulePage } from './schedule/GenerateSchedulePage';
 export { ClassroomManagementPage } from './admin/ClassroomManagementPage';
 export { ReservationApprovalPage } from './admin/ReservationApprovalPage';
+export { AdminDashboardPage, AcademicPerformancePage, AttendanceAnalyticsPage, MealAnalyticsPage, EventAnalyticsPage } from './admin/analytics';
+

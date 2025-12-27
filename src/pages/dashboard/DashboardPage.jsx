@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { WeeklyScheduleCalendar } from '@/components/schedule/WeeklyScheduleCalendar';
 import { enrollmentService } from '@/services/enrollmentService';
 import { sectionService } from '@/services/sectionService';
+import { AdminDashboardPage } from '@/pages/admin/analytics/AdminDashboardPage';
 
 const overviewCards = [
   { title: 'Kimlik Yönetimi', description: 'Kullanıcı rollerini yönetin, yeni kullanıcılar oluşturun.' },
@@ -14,8 +15,14 @@ const overviewCards = [
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const isStudent = user?.role === 'student';
-  const isFaculty = user?.role === 'faculty' || user?.role === 'admin';
+  const isFaculty = user?.role === 'faculty';
+
+  // Admin için AdminDashboardPage göster
+  if (isAdmin) {
+    return <AdminDashboardPage />;
+  }
 
   // Fetch courses for students
   const { data: studentCourses, isLoading: isLoadingStudentCourses, isError: isErrorStudentCourses } = useQuery({
@@ -72,7 +79,7 @@ export const DashboardPage = () => {
           Bu sayfa Part 1 kapsamındaki kimlik doğrulama ve kullanıcı yönetimi özelliklerinin bir önizlemesini sunar.
         </Typography>
       </Box>
-      
+
       <Grid container spacing={3}>
         {/* Overview Cards */}
         <Grid item xs={12}>
@@ -108,4 +115,3 @@ export const DashboardPage = () => {
     </Box>
   );
 };
-
