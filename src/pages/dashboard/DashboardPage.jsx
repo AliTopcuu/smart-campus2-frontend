@@ -117,7 +117,7 @@ export const DashboardPage = () => {
           Hoş geldin, {user?.fullName} 👋
         </Typography>
         <Typography color="text.secondary">
-          Bu sayfa Part 1 kapsamındaki kimlik doğrulama ve kullanıcı yönetimi özelliklerinin bir önizlemesini sunar.
+          Akademik durumunu ve günlük programını buradan takip edebilirsin.
         </Typography>
       </Box>
 
@@ -278,5 +278,125 @@ const TodaysClassesWidget = ({ sections }) => {
         )}
       </CardContent>
     </Card>
+  );
+};
+
+const StudentStatsWidget = () => {
+  // Fetch GPA and Credits
+  const { data: gradesData } = useQuery({
+    queryKey: ['dashboard-student-grades'],
+    queryFn: () => gradeService.myGrades(null, {}),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Fetch Attendance
+  const { data: attendanceData } = useQuery({
+    queryKey: ['dashboard-student-attendance'],
+    queryFn: () => attendanceService.getMyAttendanceByCourse(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch Courses for active count
+  const { data: coursesData } = useQuery({
+    queryKey: ['dashboard-student-courses'],
+    queryFn: () => enrollmentService.myCourses(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cgpa = gradesData?.cgpa || '0.00';
+  const totalCredits = gradesData?.grades?.reduce((acc, curr) => acc + (curr.credits || 0), 0) || 0;
+  const activeCourses = coursesData?.filter(c => c.status === 'enrolled')?.length || 0;
+
+  // Calculate average attendance
+  const avgAttendance = attendanceData?.length > 0
+    ? Math.round(attendanceData.reduce((acc, curr) => acc + (curr.attendancePercentage || 0), 0) / attendanceData.length)
+    : 0;
+
+  return (
+    <Grid item xs={12}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Genel Ortalama"
+            value={cgpa}
+            icon={<TrendingUp sx={{ fontSize: 60 }} />}
+            color="#4caf50"
+            subtitle="GNO (CGPA)"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Toplam Kredi"
+            value={totalCredits}
+            icon={<CreditCard sx={{ fontSize: 60 }} />}
+            color="#2196f3"
+            subtitle="Tamamlanan Kredi"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Aktif Dersler"
+            value={activeCourses}
+            icon={<Class sx={{ fontSize: 60 }} />}
+            color="#ff9800"
+            subtitle="Bu Dönem"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatsCard
+            title="Ortalama Katılım"
+            value={`%${avgAttendance}`}
+            icon={<AccessTime sx={{ fontSize: 60 }} />}
+            color={avgAttendance < 70 ? "#f44336" : "#9c27b0"}
+            subtitle={avgAttendance < 70 ? "Kritik Seviye!" : "Devam Durumu"}
+          />
+        </Grid>
+      </Grid>
+    </Grid>
+  );
+};
+
+const FacultyStatsWidget = () => {
+  const { data: sections } = useQuery({
+    queryKey: ['dashboard-faculty-sections'],
+    queryFn: () => sectionService.mySections(),
+  });
+
+  const totalSections = sections?.length || 0;
+  const totalStudents = sections?.reduce((acc, s) => acc + (s.enrolledCount || 0), 0) || 0;
+  const uniqueCourses = new Set(sections?.map(s => s.course?.code)).size || 0;
+
+  return (
+    <Grid item xs={12}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatsCard
+            title="Verilen Dersler"
+            value={uniqueCourses}
+            icon={<School sx={{ fontSize: 60 }} />}
+            color="#2196f3"
+            subtitle="Farklı Ders Kodu"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatsCard
+            title="Aktif Şubeler"
+            value={totalSections}
+            icon={<Class sx={{ fontSize: 60 }} />}
+            color="#ff9800"
+            subtitle="Toplam Section"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatsCard
+            title="Toplam Öğrenci"
+            value={totalStudents}
+            icon={<Assignment sx={{ fontSize: 60 }} />}
+            color="#4caf50"
+            subtitle="Tüm Şubelerde"
+          />
+        </Grid>
+      </Grid>
+    </Grid>
   );
 };
