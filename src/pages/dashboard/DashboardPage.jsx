@@ -35,7 +35,6 @@ export const DashboardPage = () => {
     queryKey: ['dashboard-schedule', currentSemester, currentYear],
     queryFn: () => schedulingService.getMySchedule(currentSemester, currentYear),
     enabled: (isStudent || isFaculty),
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
   // Prepare sections data for calendar from schedulingService format
