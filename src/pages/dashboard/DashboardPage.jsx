@@ -121,35 +121,36 @@ export const DashboardPage = () => {
         </Typography>
       </Box>
 
-      {/* Student Stats */}
-      {isStudent && (
-        <StudentStatsWidget />
-      )}
-
-      {/* Faculty Stats */}
-      {isFaculty && (
-        <FacultyStatsWidget />
-      )}
-
-      {/* Today's Schedule Widget */}
-      {(isStudent || isFaculty) && !isLoadingSchedule && sections.length > 0 && (
-        <Grid item xs={12}>
-          <TodaysClassesWidget sections={sections} />
-        </Grid>
-      )}
-
-      {/* Weekly Schedule Calendar */}
-      <Grid item xs={12}>
-        {isErrorSchedule ? (
-          <Alert severity="error">
-            Ders programı yüklenirken bir hata oluştu.
-          </Alert>
-        ) : (
-          <WeeklyScheduleCalendar sections={sections} isLoading={isLoadingSchedule} />
+      <Grid container spacing={3}>
+        {/* Student Stats */}
+        {isStudent && (
+          <StudentStatsWidget />
         )}
+
+        {/* Faculty Stats */}
+        {isFaculty && (
+          <FacultyStatsWidget />
+        )}
+
+        {/* Today's Schedule Widget */}
+        {(isStudent || isFaculty) && !isLoadingSchedule && sections.length > 0 && (
+          <Grid item xs={12}>
+            <TodaysClassesWidget sections={sections} />
+          </Grid>
+        )}
+
+        {/* Weekly Schedule Calendar */}
+        <Grid item xs={12}>
+          {isErrorSchedule ? (
+            <Alert severity="error">
+              Ders programı yüklenirken bir hata oluştu.
+            </Alert>
+          ) : (
+            <WeeklyScheduleCalendar sections={sections} isLoading={isLoadingSchedule} />
+          )}
+        </Grid>
       </Grid>
-    </Grid>
-    </Box >
+    </Box>
   );
 };
 
