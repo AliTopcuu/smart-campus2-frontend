@@ -26,6 +26,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { appConfig } from '@/config/appConfig';
 import { API_BASE_URL } from '@/utils/constant';
+import { NotificationBell } from '@/components/common/NotificationBell';
 
 const drawerWidth = 250;
 
@@ -144,6 +145,7 @@ export const DashboardLayout = () => {
                 {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
               </IconButton>
             </Tooltip>
+            <NotificationBell />
             <Box textAlign="right">
               <Typography variant="subtitle2">{user?.fullName}</Typography>
               <Typography variant="caption" color="text.secondary">
