@@ -8,11 +8,54 @@ import { sectionService } from '@/services/sectionService';
 import { schedulingService } from '@/services/schedulingService';
 import { AdminDashboardPage } from '@/pages/admin/analytics/AdminDashboardPage';
 
-const overviewCards = [
-  { title: 'Kimlik Yönetimi', description: 'Kullanıcı rollerini yönetin, yeni kullanıcılar oluşturun.' },
-  { title: 'Akademik Durum', description: 'Ders kayıtlarınızı ve danışman geri bildirimlerini görüntüleyin.' },
-  { title: 'Yoklama & GPS', description: 'Ders bazında yoklamalarınızı takip edin.' },
-];
+import { gradeService } from '@/services/gradeService';
+import { attendanceService } from '@/services/attendanceService';
+import { School, Class, Assignment, AccessTime, TrendingUp, CreditCard } from '@mui/icons-material';
+
+// Dashboard istatistik kartları için yardımcı bileşen
+const StatsCard = ({ title, value, subtitle, icon, color }) => (
+  <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+    <Box sx={{
+      position: 'absolute',
+      right: -20,
+      top: -20,
+      opacity: 0.1,
+      transform: 'rotate(15deg)',
+      color: color
+    }}>
+      {icon}
+    </Box>
+    <CardContent>
+      <Stack spacing={2}>
+        <Box sx={{
+          bgcolor: `${color}15`,
+          color: color,
+          width: 48,
+          height: 48,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {icon}
+        </Box>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">
+            {value}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" fontWeight={500} gutterBottom>
+            {title}
+          </Typography>
+          {subtitle && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              {subtitle}
+            </Typography>
+          )}
+        </Box>
+      </Stack>
+    </CardContent>
+  </Card>
+);
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -78,46 +121,35 @@ export const DashboardPage = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={3}>
-        {/* Overview Cards */}
-        <Grid item xs={12}>
-          <Grid container spacing={2}>
-            {overviewCards.map((card) => (
-              <Grid item xs={12} md={4} key={card.title}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {card.title}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      {card.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
+      {/* Student Stats */}
+      {isStudent && (
+        <StudentStatsWidget />
+      )}
 
-        {/* Today's Schedule Widget */}
-        {(isStudent || isFaculty) && !isLoadingSchedule && sections.length > 0 && (
-          <Grid item xs={12}>
-            <TodaysClassesWidget sections={sections} />
-          </Grid>
+      {/* Faculty Stats */}
+      {isFaculty && (
+        <FacultyStatsWidget />
+      )}
+
+      {/* Today's Schedule Widget */}
+      {(isStudent || isFaculty) && !isLoadingSchedule && sections.length > 0 && (
+        <Grid item xs={12}>
+          <TodaysClassesWidget sections={sections} />
+        </Grid>
+      )}
+
+      {/* Weekly Schedule Calendar */}
+      <Grid item xs={12}>
+        {isErrorSchedule ? (
+          <Alert severity="error">
+            Ders programı yüklenirken bir hata oluştu.
+          </Alert>
+        ) : (
+          <WeeklyScheduleCalendar sections={sections} isLoading={isLoadingSchedule} />
         )}
-
-        {/* Weekly Schedule Calendar */}
-        <Grid item xs={12}>
-          {isErrorSchedule ? (
-            <Alert severity="error">
-              Ders programı yüklenirken bir hata oluştu.
-            </Alert>
-          ) : (
-            <WeeklyScheduleCalendar sections={sections} isLoading={isLoadingSchedule} />
-          )}
-        </Grid>
       </Grid>
-    </Box>
+    </Grid>
+    </Box >
   );
 };
 
