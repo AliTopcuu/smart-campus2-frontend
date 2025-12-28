@@ -282,25 +282,29 @@ const TodaysClassesWidget = ({ sections }) => {
 };
 
 const StudentStatsWidget = () => {
+  const { user } = useAuth();
   // Fetch GPA and Credits
   const { data: gradesData } = useQuery({
-    queryKey: ['dashboard-student-grades'],
+    queryKey: ['dashboard-student-grades', user?.id],
     queryFn: () => gradeService.myGrades({}),
     staleTime: 10 * 60 * 1000,
+    enabled: !!user?.id,
   });
 
   // Fetch Attendance
   const { data: attendanceData } = useQuery({
-    queryKey: ['dashboard-student-attendance'],
+    queryKey: ['dashboard-student-attendance', user?.id],
     queryFn: () => attendanceService.myAttendanceByCourse(),
     staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
   });
 
   // Fetch Courses for active count
   const { data: coursesData } = useQuery({
-    queryKey: ['dashboard-student-courses'],
+    queryKey: ['dashboard-student-courses', user?.id],
     queryFn: () => enrollmentService.myCourses(),
     staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
   });
 
   const cgpa = gradesData?.cgpa || '0.00';
