@@ -1,4 +1,5 @@
 import { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/authService';
 import { userService } from '@/services/userService';
 import { tokenStorage } from '@/utils/tokenStorage';
@@ -41,7 +42,7 @@ export const AuthProvider = ({ children }) => {
     const { rememberMe = false, ...loginPayload } = payload;
     // Backend'e sadece email ve password gönder (token süreleri backend'de sabit)
     const response = await authService.login(loginPayload);
-    
+
     // Remember me durumuna göre token'ları sakla (localStorage vs sessionStorage)
     tokenStorage.setTokens(response.tokens, rememberMe);
     tokenStorage.setUser(response.user, rememberMe);
@@ -53,6 +54,8 @@ export const AuthProvider = ({ children }) => {
     return response.message;
   }, []);
 
+  const queryClient = useQueryClient();
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -61,8 +64,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       tokenStorage.clear();
       setUser(null);
+      queryClient.removeQueries();
     }
-  }, []);
+  }, [queryClient]);
 
   const refreshProfile = useCallback(async () => {
     const profile = await userService.getProfile();
