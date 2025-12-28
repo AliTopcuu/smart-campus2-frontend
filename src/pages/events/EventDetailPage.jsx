@@ -118,6 +118,10 @@ export const EventDetailPage = () => {
   });
 
   const handleRegisterClick = () => {
+    if (!canRegister) {
+      toast.error(getDisabledReason());
+      return;
+    }
     setRegisterDialogOpen(true);
   };
 
@@ -186,8 +190,18 @@ export const EventDetailPage = () => {
   const isFull = event.currentParticipants >= event.capacity;
   const capacityPercentage = getCapacityPercentage(event.currentParticipants, event.capacity);
   const capacityColor = getCapacityColor(capacityPercentage);
+  const isCancelled = event.status === 'cancelled';
+  const isCompleted = event.status === 'completed';
   // Allow registration if event is active and not past (even if full, show waitlist option)
-  const canRegister = event.status === 'active' && !isPast;
+  const canRegister = event.status === 'active' && !isPast && !isCancelled && !isCompleted;
+  
+  // Get disabled reason message
+  const getDisabledReason = () => {
+    if (isCancelled) return 'Bu etkinlik iptal edilmiş. Kayıt yapılamaz.';
+    if (isCompleted || isPast) return 'Bu etkinlik bitmiş. Kayıt yapılamaz.';
+    if (event.status !== 'active') return 'Bu etkinlik kayıt almıyor.';
+    return '';
+  };
 
   return (
     <Box>
@@ -217,10 +231,11 @@ export const EventDetailPage = () => {
           variant="contained"
           size="large"
           onClick={handleRegisterClick}
-          disabled={registerMutation.isPending}
+          disabled={!canRegister || registerMutation.isPending}
+          title={!canRegister ? getDisabledReason() : ''}
           sx={{ minWidth: 200 }}
         >
-          {isFull ? 'Bekleme Listesine Katıl' : 'Kayıt Ol'}
+          {isFull && canRegister ? 'Bekleme Listesine Katıl' : 'Kayıt Ol'}
         </Button>
       </Stack>
 
