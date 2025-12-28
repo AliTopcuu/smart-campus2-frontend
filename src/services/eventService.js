@@ -37,6 +37,10 @@ export const eventService = {
     const { data } = await apiClient.get(`/events/${eventId}/participants`);
     return data;
   },
+  getWaitlist: async (eventId) => {
+    const { data } = await apiClient.get(`/events/${eventId}/waitlist`);
+    return data;
+  },
   removeParticipant: async (eventId, registrationId) => {
     const { data } = await apiClient.delete(`/events/${eventId}/participants/${registrationId}`);
     return data;

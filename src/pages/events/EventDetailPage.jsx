@@ -71,12 +71,27 @@ export const EventDetailPage = () => {
     retry: 1,
   });
 
+  // Fetch waitlist if admin
+  const { 
+    data: waitlistData, 
+    isLoading: isLoadingWaitlist,
+    isError: isErrorWaitlist,
+    error: waitlistError,
+    refetch: refetchWaitlist 
+  } = useQuery({
+    queryKey: ['event-waitlist', id],
+    queryFn: () => (id ? eventService.getWaitlist(id) : Promise.reject()),
+    enabled: Boolean(id && isAdmin),
+    retry: 1,
+  });
+
   const removeParticipantMutation = useMutation({
     mutationFn: ({ eventId, registrationId }) => eventService.removeParticipant(eventId, registrationId),
     onSuccess: () => {
       toast.success('Katılımcı başarıyla kaldırıldı');
       queryClient.invalidateQueries({ queryKey: ['event', id] });
       queryClient.invalidateQueries({ queryKey: ['event-participants', id] });
+      queryClient.invalidateQueries({ queryKey: ['event-waitlist', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       setDeleteDialogOpen(false);
       setSelectedRegistrationId(null);
@@ -279,6 +294,7 @@ export const EventDetailPage = () => {
             <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
               <Tab label="Detaylar" />
               <Tab label="Katılımcılar" />
+              <Tab label="Bekleme Listesi" />
             </Tabs>
           </Box>
           
@@ -378,6 +394,81 @@ export const EventDetailPage = () => {
                   </Box>
                 ) : (
                   <Alert severity="info">Bu etkinliğe henüz katılımcı kaydı yok.</Alert>
+                )
+              ) : null}
+            </CardContent>
+          )}
+
+          {tabValue === 2 && (
+            <CardContent>
+              {isLoadingWaitlist ? (
+                <Stack alignItems="center" py={4}>
+                  <CircularProgress />
+                  <Typography mt={2}>Bekleme listesi yükleniyor...</Typography>
+                </Stack>
+              ) : isErrorWaitlist ? (
+                <Alert 
+                  severity="error"
+                  action={
+                    <Button size="small" onClick={() => refetchWaitlist()}>
+                      Tekrar Dene
+                    </Button>
+                  }
+                >
+                  Bekleme listesi yüklenirken hata oluştu: {waitlistError?.response?.data?.message || waitlistError?.message || 'Bilinmeyen hata'}
+                </Alert>
+              ) : waitlistData ? (
+                waitlistData.waitlist && waitlistData.waitlist.length > 0 ? (
+                  <Box>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                      <Typography variant="h6">
+                        Bekleme Listesi ({waitlistData.waitlist.length})
+                      </Typography>
+                      <Alert severity="info" sx={{ py: 0.5, px: 1 }}>
+                        Bir katılımcı çıktığında, listedeki ilk kişi otomatik olarak etkinliğe katılacaktır.
+                      </Alert>
+                    </Stack>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Sıra</TableCell>
+                          <TableCell>Ad Soyad</TableCell>
+                          <TableCell>Email</TableCell>
+                          <TableCell>Rol</TableCell>
+                          <TableCell>İstek Tarihi</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {waitlistData.waitlist.map((entry, index) => (
+                          <TableRow key={entry.id}>
+                            <TableCell>
+                              <Chip 
+                                label={`#${index + 1}`} 
+                                size="small" 
+                                color="primary"
+                              />
+                            </TableCell>
+                            <TableCell>{entry.user.fullName}</TableCell>
+                            <TableCell>{entry.user.email}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={entry.user.role === 'student' ? 'Öğrenci' : entry.user.role === 'faculty' ? 'Öğretim Üyesi' : 'Admin'} 
+                                size="small" 
+                                color={entry.user.role === 'admin' ? 'error' : 'default'}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {entry.requestDate 
+                                ? format(new Date(entry.requestDate), 'dd MMM yyyy HH:mm', { locale: tr })
+                                : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Box>
+                ) : (
+                  <Alert severity="info">Bekleme listesinde kimse yok.</Alert>
                 )
               ) : null}
             </CardContent>
