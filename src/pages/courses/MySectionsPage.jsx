@@ -28,17 +28,21 @@ import { sectionService } from '@/services/sectionService';
 import { enrollmentService } from '@/services/enrollmentService';
 import { useToast } from '@/hooks/useToast';
 
+import { useAuth } from '@/context/AuthContext';
+
 export const MySectionsPage = () => {
+  const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
   const [studentsDialogOpen, setStudentsDialogOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
 
   const { data: sections, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['my-sections'],
+    queryKey: ['my-sections', user?.id],
     queryFn: () => sectionService.mySections(),
     staleTime: 0,
     cacheTime: 0,
+    enabled: !!user,
   });
 
   // Get pending enrollments and students for selected section
@@ -58,18 +62,18 @@ export const MySectionsPage = () => {
     mutationFn: (enrollmentId) => enrollmentService.approveEnrollment(enrollmentId),
     onSuccess: async () => {
       toast.success('Kayıt isteği onaylandı');
-      
+
       const sectionId = selectedSection?.id;
-      
+
       // Invalidate and refetch queries
       const invalidatePromises = [
         queryClient.invalidateQueries({ queryKey: ['pending-enrollments', sectionId] }),
         queryClient.invalidateQueries({ queryKey: ['section-students', sectionId] }),
         queryClient.invalidateQueries({ queryKey: ['section-students'] }),
       ];
-      
+
       await Promise.all(invalidatePromises);
-      
+
       // Refetch queries explicitly
       if (sectionId) {
         await Promise.all([
@@ -157,7 +161,7 @@ export const MySectionsPage = () => {
                 {sectionsList.map((section) => {
                   // Parse schedule information - handle string from Sequelize JSONB
                   let schedule = section.scheduleJson;
-                  
+
                   // Debug log
                   if (process.env.NODE_ENV === 'development') {
                     console.log('MySectionsPage - Section schedule data:', {
@@ -167,7 +171,7 @@ export const MySectionsPage = () => {
                       section: section
                     });
                   }
-                  
+
                   if (typeof schedule === 'string') {
                     try {
                       schedule = JSON.parse(schedule);
@@ -176,7 +180,7 @@ export const MySectionsPage = () => {
                     }
                   }
                   schedule = schedule || {};
-                  
+
                   const dayLabels = {
                     Monday: 'Pazartesi',
                     Tuesday: 'Salı',
@@ -184,20 +188,20 @@ export const MySectionsPage = () => {
                     Thursday: 'Perşembe',
                     Friday: 'Cuma',
                   };
-                  
+
                   let scheduleText = 'Belirtilmemiş';
-                  
+
                   // New format: scheduleItems array
                   if (Array.isArray(schedule.scheduleItems) && schedule.scheduleItems.length > 0) {
                     const scheduleTexts = schedule.scheduleItems.map(item => {
                       const dayLabel = dayLabels[item.day] || item.day;
-                      const timeStr = item.startTime && item.endTime 
-                        ? ` (${item.startTime}-${item.endTime})` 
+                      const timeStr = item.startTime && item.endTime
+                        ? ` (${item.startTime}-${item.endTime})`
                         : '';
                       return `${dayLabel}${timeStr}`;
                     });
                     scheduleText = scheduleTexts.join(', ');
-                  } 
+                  }
                   // Old format: days array + single startTime/endTime
                   else if (Array.isArray(schedule.days) && schedule.days.length > 0) {
                     scheduleText = schedule.days.map(day => dayLabels[day] || day).join(', ');
@@ -205,9 +209,9 @@ export const MySectionsPage = () => {
                       scheduleText += ` (${schedule.startTime}-${schedule.endTime})`;
                     }
                   }
-                  
+
                   const classroom = schedule.classroom || 'Belirtilmemiş';
-                  
+
                   return (
                     <TableRow key={section.id}>
                       <TableCell>
@@ -272,7 +276,7 @@ export const MySectionsPage = () => {
                       }
                     }
                     schedule = schedule || {};
-                    
+
                     const dayLabels = {
                       Monday: 'Pazartesi',
                       Tuesday: 'Salı',
@@ -280,7 +284,7 @@ export const MySectionsPage = () => {
                       Thursday: 'Perşembe',
                       Friday: 'Cuma',
                     };
-                    
+
                     if (Array.isArray(schedule.scheduleItems) && schedule.scheduleItems.length > 0) {
                       return (
                         <Stack spacing={0.5}>

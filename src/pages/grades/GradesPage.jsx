@@ -34,20 +34,22 @@ export const GradesPage = () => {
   const [selectedSemester, setSelectedSemester] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['my-grades', selectedYear, selectedSemester],
+    queryKey: ['my-grades', user?.id, selectedYear, selectedSemester],
     queryFn: () => gradeService.myGrades({
       year: selectedYear || undefined,
       semester: selectedSemester || undefined
     }),
     staleTime: 0, // Always refetch when component mounts
     cacheTime: 0, // Don't cache data
+    enabled: !!user,
   });
 
   // Get all grades for filter options (always fetch, regardless of filters)
   const { data: allGradesData } = useQuery({
-    queryKey: ['my-grades-all'],
+    queryKey: ['my-grades-all', user?.id],
     queryFn: () => gradeService.myGrades({}), // Fetch all without filters
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: !!user,
   });
 
   const { data: transcriptData } = useQuery({

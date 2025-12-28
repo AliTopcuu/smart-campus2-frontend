@@ -27,7 +27,10 @@ import { enrollmentService } from '@/services/enrollmentService';
 import { gradeService } from '@/services/gradeService';
 import { useToast } from '@/hooks/useToast';
 
+import { useAuth } from '@/context/AuthContext';
+
 export const GradebookPage = () => {
+  const { user } = useAuth();
   const { sectionId: paramSectionId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -37,20 +40,20 @@ export const GradebookPage = () => {
   const [grades, setGrades] = useState({});
 
   const { data: sections, isLoading: sectionsLoading } = useQuery({
-    queryKey: ['my-sections'],
+    queryKey: ['my-sections', user?.id],
     queryFn: () => sectionService.mySections(),
-    enabled: true,
+    enabled: !!user,
   });
 
   // Group sections by course
   const coursesWithSections = useMemo(() => {
     if (!sections || sections.length === 0) return [];
-    
+
     const courseMap = new Map();
     sections.forEach(section => {
       const courseId = section.course?.id;
       if (!courseId) return;
-      
+
       if (!courseMap.has(courseId)) {
         courseMap.set(courseId, {
           courseId,
@@ -61,8 +64,8 @@ export const GradebookPage = () => {
       }
       courseMap.get(courseId).sections.push(section);
     });
-    
-    return Array.from(courseMap.values()).sort((a, b) => 
+
+    return Array.from(courseMap.values()).sort((a, b) =>
       a.courseCode.localeCompare(b.courseCode)
     );
   }, [sections]);
@@ -84,16 +87,16 @@ export const GradebookPage = () => {
     mutationFn: (payload) => gradeService.saveGrades(selectedSectionId, payload),
     onSuccess: async (res) => {
       toast.success(res.message || 'Notlar başarıyla kaydedildi');
-      
+
       // Invalidate all related queries
       const invalidatePromises = [
         queryClient.invalidateQueries({ queryKey: ['section-students', selectedSectionId] }),
         queryClient.invalidateQueries({ queryKey: ['section-students'] }), // Invalidate all section students queries
         queryClient.invalidateQueries({ queryKey: ['pending-enrollments'] }), // In case any related queries
       ];
-      
+
       await Promise.all(invalidatePromises);
-      
+
       // Explicitly refetch the students list
       if (selectedSectionId) {
         try {
@@ -222,7 +225,7 @@ export const GradebookPage = () => {
       <Typography variant="h4" mb={3}>
         Not Defteri
       </Typography>
-      
+
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} mb={3}>
         <FormControl sx={{ minWidth: 300 }}>
           <InputLabel>Ders Seçin</InputLabel>
@@ -238,7 +241,7 @@ export const GradebookPage = () => {
             ))}
           </Select>
         </FormControl>
-        
+
         <FormControl sx={{ minWidth: 300 }} disabled={!selectedCourseId}>
           <InputLabel>Section Seçin</InputLabel>
           <Select

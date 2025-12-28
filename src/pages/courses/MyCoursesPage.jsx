@@ -22,6 +22,8 @@ import {
 import { enrollmentService } from '@/services/enrollmentService';
 import { useToast } from '@/hooks/useToast';
 
+import { useAuth } from '@/context/AuthContext';
+
 const getAttendanceStatus = (percentage) => {
   if (percentage === undefined || percentage === null)
     return { label: 'N/A', color: 'default' };
@@ -31,15 +33,17 @@ const getAttendanceStatus = (percentage) => {
 };
 
 export const MyCoursesPage = () => {
+  const { user } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
   const [selectedEnrollment, setSelectedEnrollment] = useState(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['my-courses'],
+    queryKey: ['my-courses', user?.id],
     queryFn: () => enrollmentService.myCourses(),
     staleTime: 0, // Always refetch when component mounts
     cacheTime: 0, // Don't cache data
+    enabled: !!user,
   });
 
   const dropMutation = useMutation({

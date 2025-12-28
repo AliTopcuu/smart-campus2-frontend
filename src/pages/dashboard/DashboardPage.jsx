@@ -75,9 +75,9 @@ export const DashboardPage = () => {
 
   // Fetch schedule for both students and faculty
   const { data: scheduleData, isLoading: isLoadingSchedule, isError: isErrorSchedule } = useQuery({
-    queryKey: ['dashboard-schedule', currentSemester, currentYear],
+    queryKey: ['dashboard-schedule', user?.id, currentSemester, currentYear],
     queryFn: () => schedulingService.getMySchedule(currentSemester, currentYear),
-    enabled: (isStudent || isFaculty),
+    enabled: (isStudent || isFaculty) && !!user,
   });
 
   // Prepare sections data for calendar from schedulingService format
@@ -361,9 +361,11 @@ const StudentStatsWidget = () => {
 };
 
 const FacultyStatsWidget = () => {
+  const { user } = useAuth();
   const { data: sections } = useQuery({
-    queryKey: ['dashboard-faculty-sections'],
+    queryKey: ['dashboard-faculty-sections', user?.id],
     queryFn: () => sectionService.mySections(),
+    enabled: !!user,
   });
 
   const totalSections = sections?.length || 0;

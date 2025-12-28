@@ -29,18 +29,21 @@ const DAY_LABELS = {
   friday: 'Cuma'
 };
 
+import { useAuth } from '@/context/AuthContext';
+
 export const MySchedulePage = () => {
+  const { user } = useAuth();
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
   const defaultSemester = currentMonth >= 8 ? 'Fall' : 'Spring';
-  
+
   const [semester, setSemester] = useState(defaultSemester);
   const [year, setYear] = useState(currentYear);
 
   const { data: schedule, isLoading, isError } = useQuery({
-    queryKey: ['my-schedule', semester, year],
+    queryKey: ['my-schedule', user?.id, semester, year],
     queryFn: () => schedulingService.getMySchedule(semester, year),
-    enabled: !!semester && !!year,
+    enabled: !!semester && !!year && !!user,
   });
 
   const handleExportICal = () => {
@@ -104,8 +107,8 @@ export const MySchedulePage = () => {
       </Stack>
 
       {schedule && Object.keys(schedule).length > 0 ? (
-        <WeeklyScheduleCalendar 
-          sections={Object.entries(schedule).flatMap(([day, items]) => 
+        <WeeklyScheduleCalendar
+          sections={Object.entries(schedule).flatMap(([day, items]) =>
             items.map(item => ({
               id: item.sectionId,
               courseCode: item.courseCode,
@@ -119,9 +122,9 @@ export const MySchedulePage = () => {
                   classroomId: null
                 }]
               },
-              classroom: item.classroom ? { 
-                building: item.classroom.split(' ')[0], 
-                roomNumber: item.classroom.split(' ').slice(1).join(' ') 
+              classroom: item.classroom ? {
+                building: item.classroom.split(' ')[0],
+                roomNumber: item.classroom.split(' ').slice(1).join(' ')
               } : null,
               course: { code: item.courseCode, name: item.courseName }
             }))
