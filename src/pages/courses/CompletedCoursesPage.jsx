@@ -104,14 +104,12 @@ export const CompletedCoursesPage = () => {
                 const year = enrollment.section?.year || 'N/A';
 
                 // Determine status color
+                // F ise "Kaldı", diğerleri "Geçti"
                 let statusColor = 'success';
-                let statusLabel = 'Tamamlandı';
+                let statusLabel = 'Geçti';
                 if (status === 'failed' || letterGrade === 'F') {
                   statusColor = 'error';
                   statusLabel = 'Kaldı';
-                } else if (status === 'completed') {
-                  statusColor = 'success';
-                  statusLabel = 'Geçti';
                 }
 
                 return (
